@@ -10,7 +10,7 @@ generator client {
 
 model Opinion{
   id    String @id @default(cuid())
-  book  Book  @relation(fields: [bookId], references: [id])
+  book  Book  @relation(fields: [bookId], references: [slug])
   bookId String
   description String
   user  User @relation(fields: [userId], references: [id])
@@ -23,8 +23,8 @@ model Opinion{
 }
 
 model Book{
-  id    String @id @default(cuid())
-  category    BookCategory @relation(fields: [categoryId], references: [id])
+  slug    String @id @default(cuid())
+  category    BookCategory @relation(fields: [categoryId], references: [slug])
   categoryId    String @unique
   title   String
   author    String
@@ -38,8 +38,8 @@ model Book{
 }
 
 model BookCategory{
-  id    String @id @default(cuid())
-  bookGroup   BookGroup   @relation(fields: [bookGroupId], references: [id])
+  slug    String @id @default(cuid())
+  bookGroup   BookGroup   @relation(fields: [bookGroupId], references: [slug])
   bookGroupId     String
   name      String
   isActive  Boolean @default(false)
@@ -52,7 +52,7 @@ model BookCategory{
 }
 
 model BookGroup{
-  id    String @id @default(cuid())
+  slug    String @id @default(cuid())
   users   BookGroupsToUsers[]
   categories  BookCategory[]
   creatorId String
@@ -77,7 +77,7 @@ model User {
 }
 
 model BookGroupsToUsers {
-  bookGroup       BookGroup     @relation(fields: [bookGroupId], references: [id])
+  bookGroup       BookGroup     @relation(fields: [bookGroupId], references: [slug])
   bookGroupId    String // relation scalar field (used in the `@relation` attribute above)
   user User @relation(fields: [userId], references: [id])
   userId String // relation scalar field (used in the `@relation` attribute above)

@@ -112,9 +112,19 @@ async function seed() {
 
   const bookGroup = await prisma.bookGroup.create({
     data: {
+      slug: "dzusio-adkowa-grupa",
       creatorId: user.id,
       name: "DżusioAdkowaGrupa",
       users: { create: [{ userId: user.id }, { userId: user2.id }] },
+    },
+  });
+
+  await prisma.bookGroup.create({
+    data: {
+      slug: "adkowo-dzusiowa-grupa",
+      creatorId: user2.id,
+      name: "AdkowoDzusiowaGrupa",
+      users: { create: [{ userId: user2.id }, { userId: user.id }] },
     },
   });
 
@@ -122,7 +132,11 @@ async function seed() {
     bookCategoriesNames.map((bookCategory) =>
       prisma.bookCategory.create({
         data: {
-          bookGroupId: bookGroup.id,
+          slug: bookCategory
+            .split(" ")
+            .map((word) => word.toLowerCase())
+            .join("-"),
+          bookGroupId: bookGroup.slug,
           name: bookCategory,
           isActive: activeCategory === bookCategory,
           wasPicked: wasPicked.some((name) => name === bookCategory),
@@ -133,10 +147,11 @@ async function seed() {
 
   const books = await Promise.all(
     [bookCategories[crimeIndex], bookCategories[adventureIndex]].map(
-      (bookCategory) =>
+      (bookCategory, index) =>
         prisma.book.create({
           data: {
-            categoryId: bookCategory.id,
+            slug: `random-book-${index}`,
+            categoryId: bookCategory.slug,
             title: "RandomBook",
             author: "Random",
             dateStart: new Date(),
@@ -155,7 +170,7 @@ async function seed() {
         prisma.opinion.create({
           data: {
             userId: userIt.id,
-            bookId: book.id,
+            bookId: book.slug,
             description: "Random",
             rate: rates[it++],
           },
