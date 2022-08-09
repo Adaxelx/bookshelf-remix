@@ -16,7 +16,7 @@ type ButtonProps = ElementProps & {
 const getStyles = (variant: Variant) => {
   switch (variant) {
     case "primary":
-      return "rounded bg-accent-400 py-3 px-5";
+      return "rounded bg-accent-400 py-3 px-5 hover:bg-accent-500 transition-colors focus:bg-accent-600 disabled:bg-gray-300 disabled:text-secondary-500";
     case "secondary":
       return "";
     case "tertiary":
@@ -34,5 +34,5 @@ export default function Button({ variant = "primary", ...props }: ButtonProps) {
     // eslint-disable-next-line jsx-a11y/anchor-has-content
     return <Link {...props} className={className} />;
   }
-  return <button className={className} />;
+  return <button className={className} {...props} />;
 }

@@ -11,3 +11,17 @@ export async function getUserBookGroups(id: User["id"]) {
     },
   });
 }
+
+export async function getBookGroup({
+  userId,
+  bookGroupId,
+}: {
+  userId: string;
+  bookGroupId: string;
+}) {
+  return prisma.bookGroup.findFirst({
+    where: {
+      users: { some: { userId, bookGroupId } },
+    },
+  });
+}

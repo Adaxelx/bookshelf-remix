@@ -1,17 +1,22 @@
 import type { LoaderArgs } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
+
 import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { Button } from "~/components";
 import { getUserBookGroups } from "~/models/bookGroup.server";
-import { getUserId } from "~/session.server";
+import { requireUser } from "~/session.server";
 import { useOptionalUser } from "~/utils";
 
 export async function loader({ request }: LoaderArgs) {
-  const userId = await getUserId(request);
-  if (!userId) return redirect("/login");
-  const bookGroups = await getUserBookGroups(userId);
-  return json({ bookGroups });
+  const user = await requireUser(request);
+  const bookGroups = await getUserBookGroups(user.id);
+  return json({
+    bookGroups: bookGroups.map(({ creatorId, slug, name }) => ({
+      creatorId,
+      slug,
+      name,
+    })),
+  });
 }
 
 export default function BookGroups() {

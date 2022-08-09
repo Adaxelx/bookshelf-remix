@@ -1,70 +1,80 @@
+const fs = require("fs");
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
-
+const path = require("node:path");
 const prisma = new PrismaClient();
 
+function base64_encode(file) {
+  // read binary data
+  var bitmap = fs.readFileSync(path.resolve(__dirname, file));
+  // convert binary data to base64 encoded string
+  return new Buffer(bitmap).toString("base64");
+}
+
 const bookCategoriesNames = [
-  "Astronomia",
-  "Bajka",
-  "Baśnie",
-  "Biografia",
-  "Biznes/Finanse",
-  "Dramat",
-  "Erotyka",
-  "Eseje",
-  "Etyka",
-  "Fantasy",
-  "Filozofia",
-  "Flora i fauna",
-  "Historia",
-  "Historie biblijne",
-  "Horror",
-  "Informatyka",
-  "Klasyka",
-  "Komedia",
-  "Komiksy",
-  "Kryminał",
-  "Legendy",
-  "Literatura popularno-naukowa",
-  "Językoznawstwo",
-  "Literatura młodzieżowa",
-  "Literatura obyczajowa",
-  "Literatura piękna",
-  "Literatura podróżnicza",
-  "Manga",
-  "Matematyka",
-  "Medycyna",
-  "Mitologia",
-  "Motoryzacja",
-  "Nauki przyrodnicze",
-  "Nauki społeczne",
-  "Opowiadania",
-  "Pamiętniki",
-  "Poezja",
-  "Poradniki",
-  "Poradniki rodzicielskie",
-  "Powieść historyczna",
-  "Powieść przygodowa",
-  "Religia",
-  "Reportaż",
-  "Romans",
-  "Rozwój osobisty",
-  "Satyra",
-  "Science Finction",
-  "Sensacja",
-  "Sport",
-  "Technika",
-  "Thriller",
-  "Tragedia",
-  "Utwór dramatyczny",
-  "Wierszyki/Piosenki",
-  "Zdrowie",
+  { name: "Astronomia", image: "Astronomia.jpg" },
+  { name: "Bajka", image: "Bajka.jpg" },
+  { name: "Baśnie", image: "Baśnie.jpg" },
+  { name: "Biografia", image: "Biografia.jpg" },
+  { name: "Biznes/Finanse", image: "Biznes-Finanse.jpg" },
+  { name: "Dramat", image: "Dramat.jpg" },
+  { name: "Erotyka", image: "Erotyka.jpg" },
+  { name: "Eseje", image: "Eseje.jpg" },
+  { name: "Etyka", image: "Etyka.jpg" },
+  { name: "Fantasy", image: "Fantasy.jpg" },
+  { name: "Filozofia", image: "Filozofia.jpg" },
+  { name: "Flora i fauna", image: "Flora i fauna.jpg" },
+  { name: "Historia", image: "Historia.jpg" },
+  { name: "Historie biblijne", image: "Historie biblijne.jpg" },
+  { name: "Horror", image: "Horror.jpg" },
+  { name: "Informatyka", image: "Informatyka.jpg" },
+  { name: "Klasyka", image: "Klasyka.jpg" },
+  { name: "Komedia", image: "Komedia.jpg" },
+  { name: "Komiksy", image: "Komiksy.jpg" },
+  { name: "Kryminał", image: "Kryminal.jpg" },
+  { name: "Legendy", image: "Legendy.jpg" },
+  { name: "Literatura popularno-naukowa", image: "LiteraruraPopNauka.jpg" },
+  { name: "Językoznawstwo", image: "LiteraturaJezykoznawstwo.jpg" },
+  { name: "Literatura młodzieżowa", image: "LiteraturaMlodziezowa.jpg" },
+  { name: "Literatura obyczajowa", image: "LiteraturaObyczajowa.jpg" },
+  { name: "Literatura piękna", image: "LiteraturaPiekna.jpg" },
+  { name: "Literatura podróżnicza", image: "LiteraturaPodroznicza.jpg" },
+  { name: "Manga", image: "Manga.jpg" },
+  { name: "Matematyka", image: "Matematyka.jpg" },
+  { name: "Medycyna", image: "Medycyna.jpg" },
+  { name: "Mitologia", image: "Mitologia.jpg" },
+  { name: "Motoryzacja", image: "Motoryzacja.jpg" },
+  { name: "Nauki przyrodnicze", image: "NaukiPrzyrodnicze.jpg" },
+  { name: "Nauki społeczne", image: "NaukiSpoleczne.jpg" },
+  { name: "Opowiadania", image: "Opowiadania.jpg" },
+  { name: "Pamiętniki", image: "Pamietnik.jpg" },
+  { name: "Poezja", image: "Poezja.jpg" },
+  { name: "Poradniki", image: "Poradniki.jpg" },
+  { name: "Poradniki rodzicielskie", image: "PoradnikRodzic.jpg" },
+  { name: "Powieść historyczna", image: "Powiesc historyczna.jpg" },
+  { name: "Powieść przygodowa", image: "PowiescPrzygodowa.jpg" },
+  { name: "Religia", image: "Religia.jpg" },
+  { name: "Reportaż", image: "Reportaz.jpg" },
+  { name: "Romans", image: "Romans.jpg" },
+  { name: "Rozwój osobisty", image: "RozwojOsobisty.jpg" },
+  { name: "Satyra", image: "Satyra.jpg" },
+  { name: "Science Finction", image: "ScienceFiction.jpg" },
+  { name: "Sensacja", image: "Sensacja.jpg" },
+  { name: "Sport", image: "Sport.jpg" },
+  { name: "Technika", image: "Technika.jpg" },
+  { name: "Thriller", image: "Thriller.jpg" },
+  { name: "Tragedia", image: "Tragedia.jpg" },
+  { name: "Utwór dramatyczny", image: "UtworDramaryczny.jpg" },
+  { name: "Wierszyki/Piosenki", image: "WierszykiPiosenki.jpg" },
+  { name: "Zdrowie", image: "Zdrowie.jpg" },
 ];
 
-const crimeIndex = bookCategoriesNames.findIndex((name) => name === "Kryminał");
+const crimeIndex = bookCategoriesNames.findIndex(
+  ({ name }) => name === "Kryminał"
+);
 
 const adventureIndex = bookCategoriesNames.findIndex(
-  (name) => name === "Powieść przygodowa"
+  ({ name }) => name === "Powieść przygodowa"
 );
 
 const activeCategory = bookCategoriesNames[crimeIndex];
@@ -73,6 +83,8 @@ const wasPicked = [activeCategory, adventureCategory];
 
 async function seed() {
   const email = "test1@o2.pl";
+
+  // console.log(base64_encode("../public/assets/AstronomiaAstrofizyka.jpg"));
 
   // cleanup the existing database
   await prisma.opinion.deleteMany({});
@@ -128,22 +140,35 @@ async function seed() {
     },
   });
 
-  const bookCategories = await Promise.all(
-    bookCategoriesNames.map((bookCategory) =>
-      prisma.bookCategory.create({
+  const images = await Promise.all(
+    bookCategoriesNames.map(({ name, image }) =>
+      prisma.image.create({
         data: {
-          slug: bookCategory
-            .split(" ")
-            .map((word) => word.toLowerCase())
-            .join("-"),
-          bookGroupId: bookGroup.slug,
-          name: bookCategory,
-          isActive: activeCategory === bookCategory,
-          wasPicked: wasPicked.some((name) => name === bookCategory),
+          encoded: base64_encode(`../public/assets/${image}`),
         },
       })
     )
   );
+
+  const bookCategories = await Promise.all(
+    bookCategoriesNames.map(({ name, image }, index) =>
+      prisma.bookCategory.create({
+        data: {
+          slug: name
+            .split(" ")
+            .map((word) => word.toLowerCase())
+            .join("-"),
+          bookGroupId: bookGroup.slug,
+          name,
+          isActive: activeCategory === name,
+          wasPicked: wasPicked.some((pickedName) => pickedName === name),
+          imageId: images[index].id,
+        },
+      })
+    )
+  );
+
+  console.log(bookCategories);
 
   const books = await Promise.all(
     [bookCategories[crimeIndex], bookCategories[adventureIndex]].map(
