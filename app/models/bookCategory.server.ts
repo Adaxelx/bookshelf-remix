@@ -12,6 +12,14 @@ export async function getCategories(bookGroupId: BookGroup["slug"]) {
   });
 }
 
+export async function getCategory(categorySlug: BookCategory["slug"]) {
+  return prisma.bookCategory.findFirst({
+    where: {
+      slug: categorySlug,
+    },
+  });
+}
+
 export async function setActiveCategory(categorySlug: BookCategory["slug"]) {
   return prisma.bookCategory.update({
     where: {
