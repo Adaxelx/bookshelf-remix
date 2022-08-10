@@ -2,7 +2,7 @@ import type { LoaderArgs } from "@remix-run/node";
 
 import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
-import { Button } from "~/components";
+import { Button, PageContainer } from "~/components";
 import { getUserBookGroups } from "~/models/bookGroup.server";
 import { requireUser } from "~/session.server";
 import { useOptionalUser } from "~/utils";
@@ -23,7 +23,7 @@ export default function BookGroups() {
   const { bookGroups } = useLoaderData<typeof loader>();
   const user = useOptionalUser();
   return (
-    <main className="p-3">
+    <PageContainer>
       <h1>Book groups</h1>
       <Button className="mb-3" to="new">
         Dodaj nową grupę
@@ -45,6 +45,6 @@ export default function BookGroups() {
           );
         })}
       </article>
-    </main>
+    </PageContainer>
   );
 }

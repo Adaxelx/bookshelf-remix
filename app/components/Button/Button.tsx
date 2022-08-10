@@ -9,30 +9,49 @@ type ElementProps = LinkProps | ButtonHTMLAttributes<HTMLButtonElement>;
 
 type Variant = "primary" | "secondary" | "tertiary";
 
+type Size = "regular" | "big";
+
 type ButtonProps = ElementProps & {
   variant?: Variant;
+  size?: Size;
+};
+
+const getSize = (size: Size) => {
+  switch (size) {
+    case "big":
+      return "text-4xl py-5 px-8";
+    default:
+      return "base py-3 px-5";
+  }
 };
 
 const getStyles = (variant: Variant) => {
   switch (variant) {
     case "primary":
-      return "rounded bg-accent-400 py-3 px-5 hover:bg-accent-500 transition-colors focus:bg-accent-600 disabled:bg-gray-300 disabled:text-secondary-500";
+      return `bg-accent-400 hover:bg-accent-500 focus:bg-accent-600 disabled:bg-gray-300 disabled:text-secondary-500`;
     case "secondary":
-      return "";
+      return `border border-accent-500 bg-accent-100 hover:bg-accent-500 focus:bg-accent-600 disabled:bg-gray-300 disabled:text-secondary-500`;
     case "tertiary":
       return "";
   }
 };
 
-export default function Button({ variant = "primary", ...props }: ButtonProps) {
-  const className = [
+export default function Button({
+  variant = "primary",
+  size = "regular",
+  ...props
+}: ButtonProps) {
+  const generatedClassName = [
+    getSize(size),
     getStyles(variant),
-    `inline-block text-secondary-800 ${props.className ?? ""}`,
+    `rounded transition-colors inline-block text-secondary-800 ${
+      props.className ?? ""
+    }`,
   ].join(" ");
 
   if (isButtonALinkProps(props)) {
     // eslint-disable-next-line jsx-a11y/anchor-has-content
-    return <Link {...props} className={className} />;
+    return <Link {...props} className={generatedClassName} />;
   }
-  return <button className={className} {...props} />;
+  return <button {...props} className={generatedClassName} />;
 }

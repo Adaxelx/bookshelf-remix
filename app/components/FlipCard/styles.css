@@ -12,16 +12,20 @@
   --height: 384px;
   --width: 250px;
 
+  --maxHeight: calc(100vw - 16px);
+  max-height: var(--maxHeight);
+  max-width: calc(var(--maxHeight) / 1.5);
+
   background-color: transparent;
   width: var(--width);
   height: var(--height);
   position: absolute;
   top: 100%;
-  left: calc(50% - var(--width) / 2);
-  /* transform: translate(-50%, -50%); */
+  left: 50%;
+  transform: translate(-50%, -50%);
   perspective: 1000px; /* Remove this if you don't want the 3D effect */
 
-  --afterAnimationTop: calc(50% - var(--height) / 2);
+  --afterAnimationTop: 50%;
   animation-duration: var(--fullAnimationTime);
   animation-fill-mode: forwards;
   animation-name: slideInAndRotate;
@@ -64,22 +68,22 @@
 
 @keyframes slideInAndRotate {
   0% {
-    top: 100%;
-    transform: rotateY(0deg) rotateX(0deg);
+    top: calc(100% + var(--height) / 2);
+    transform: translate(-50%, -50%) rotateY(0deg) rotateZ(0deg);
   }
 
   33% {
     top: var(--afterAnimationTop);
-    transform: rotateY(0deg) rotateX(0deg);
+    transform: translate(-50%, -50%) rotateY(0deg) rotateZ(0deg);
   }
 
   84% {
     top: var(--afterAnimationTop);
-    transform: rotateY(0deg) rotateX(0deg);
+    transform: translate(-50%, -50%) rotateY(0deg) rotateZ(0deg);
   }
   100% {
     top: var(--afterAnimationTop);
-    transform: rotateY(360deg) rotateZ(90deg);
+    transform: translate(-50%, -50%) rotateY(360deg) rotateZ(90deg);
   }
 }
 
@@ -131,15 +135,7 @@
   backface-visibility: hidden;
 }
 
-/* Style the front side (fallback if image is missing) */
-.flip-card-front {
-  background-color: #bbb;
-  color: black;
-}
-
 /* Style the back side */
 .flip-card-back {
-  background-color: dodgerblue;
-  color: white;
   transform: rotateY(180deg);
 }
