@@ -5,7 +5,9 @@ export default function Card({
   isBase = true,
 }: CardProps) {
   return (
-    <section className={`relative h-full w-full  bg-primary-600 ${className}`}>
+    <section
+      className={`relative h-full w-full overflow-hidden rounded-xl bg-primary-600 ${className}`}
+    >
       <img
         src={isBase ? `data:image/jpg;base64,${src}` : src}
         alt={alt}

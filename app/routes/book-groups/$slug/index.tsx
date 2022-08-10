@@ -70,7 +70,7 @@ export default function BookGroup() {
   const randomCategory = useActionData<typeof action>();
 
   return (
-    <PageContainer className="flex flex-col">
+    <PageContainer>
       <div className="shrink grow basis-0">
         <h1>{bookGroup.name}</h1>
         <section className="mb-3 flex flex-col md:flex-row">
