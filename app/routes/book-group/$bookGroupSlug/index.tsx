@@ -28,19 +28,22 @@ export const links = () => [
 
 export async function loader({ request, params }: LoaderArgs) {
   const user = await requireUser(request);
-  invariant(params.slug, "Slug is required");
+  invariant(params.bookGroupSlug, "Slug is required");
   const bookGroup = await getBookGroup({
     userId: user.id,
-    bookGroupId: params.slug,
+    bookGroupId: params.bookGroupSlug,
   });
 
   if (!bookGroup) {
-    throw new Response(`Post with slug "${params.slug}" doesn't exist!`, {
-      status: 404,
-    });
+    throw new Response(
+      `Book group with slug "${params.bookGroupSlug}" doesn't exist!`,
+      {
+        status: 404,
+      }
+    );
   }
 
-  const bookCategories = await getCategories(params.slug);
+  const bookCategories = await getCategories(params.bookGroupSlug);
   return json({
     bookGroup: { name: bookGroup.name },
     bookCategories: bookCategories.map(({ slug }) => slug),
@@ -74,17 +77,17 @@ export default function BookGroup() {
       <div className="shrink grow basis-0">
         <h1>{bookGroup.name}</h1>
         <section className="mb-3 flex flex-col md:flex-row">
-          <Button to="category-history" variant="secondary">
-            Losowanie kategorii
-          </Button>
-          <Button to="category-history" variant="secondary">
-            Historia kategorii
+          <Button to="category" variant="secondary">
+            Lista kategorii
           </Button>
           <Button to="new-category" variant="secondary">
             Nowa kategoria
           </Button>
           {activeBookCategory ? (
-            <Button to={`${activeBookCategory.slug}`} variant="secondary">
+            <Button
+              to={`category/${activeBookCategory.slug}`}
+              variant="secondary"
+            >
               Pokaż aktywną kategorię
             </Button>
           ) : null}

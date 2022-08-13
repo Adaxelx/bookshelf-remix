@@ -85,7 +85,7 @@ export async function action({ request, params }: ActionArgs) {
     categoryId: params.categoryName,
   });
 
-  return redirect(`/book-groups/${params.slug}/${params.categoryName}`);
+  return redirect(`/book-group/${params.bookGroupSlug}/${params.categoryName}`);
 }
 
 const inputClassName = "";

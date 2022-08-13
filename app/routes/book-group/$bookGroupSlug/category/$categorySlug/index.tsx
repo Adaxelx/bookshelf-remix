@@ -20,11 +20,11 @@ import { addOpinion, getOpinions } from "~/models/opinion.server";
 
 export async function loader({ request, params }: LoaderArgs) {
   await requireUser(request);
-  invariant(params.categoryName, "CategoryName is required");
-  const bookCategory = await getCategory(params.categoryName);
+  invariant(params.categorySlug, "CategoryName is required");
+  const bookCategory = await getCategory(params.categorySlug);
   if (!bookCategory) {
     throw new Response(
-      `Category with slug "${params.categoryName}" doesn't exist!`,
+      `Category with slug "${params.categorySlug}" doesn't exist!`,
       {
         status: 404,
       }
@@ -111,7 +111,7 @@ export async function action({ request, params }: ActionArgs) {
     userId: user.id,
   });
 
-  return redirect(`/book-groups/${params.slug}/${params.categoryName}`);
+  return redirect(`/book-group/${params.bookGroupSlug}/${params.categoryName}`);
 }
 
 export default function CategoryPage() {

@@ -19,7 +19,7 @@ export async function action({ request }: ActionArgs) {
   const email = formData.get("email");
   const name = formData.get("name");
   const password = formData.get("password");
-  const redirectTo = safeRedirect(formData.get("redirectTo"), "/book-groups");
+  const redirectTo = safeRedirect(formData.get("redirectTo"), "/book-group");
 
   if (!validateEmail(email)) {
     return json(
