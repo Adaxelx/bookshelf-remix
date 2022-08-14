@@ -43,11 +43,9 @@ describe("smoke tests", () => {
     cy.get("#slug").type(testBookGroup.slug);
     cy.findByText("Add").click();
 
-    cy.login();
     cy.findByText(testBookGroup.name);
     cy.url().should("include", `book-group/${testBookGroup.slug}`);
-
-    cy.visitAndCheck("/book-group");
+    cy.login();
   });
 
   it("should add new category", () => {
