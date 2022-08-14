@@ -28,6 +28,25 @@ declare global {
       cleanupUser: typeof cleanupUser;
 
       /**
+       * Deletes all book groups
+       *
+       * @returns {typeof deleteBookGroups}
+       * @memberof Chainable
+       * @example
+       *    cy. deleteBookGroups()
+       */
+      deleteBookGroups: typeof deleteBookGroups;
+
+      /**
+       * Create random book group
+       *
+       * @returns {typeof createRandomBookGroup}
+       * @memberof Chainable
+       * @example
+       *    cy.createRandomBookGroup()
+       */
+      createRandomBookGroup: typeof createRandomBookGroup;
+      /**
        * Extends the standard visit command to wait for the page to load
        *
        * @returns {typeof visitAndCheck}
@@ -54,6 +73,12 @@ function login({
     const cookieValue = stdout
       .replace(/.*<cookie>(?<cookieValue>.*)<\/cookie>.*/s, "$<cookieValue>")
       .trim();
+
+    const userId = stdout
+      .replace(/.*<userId>(?<cookieValue>.*)<\/userId>.*/s, "$<cookieValue>")
+      .trim();
+
+    cy.then(() => ({ userId })).as("userId");
     cy.setCookie("__session", cookieValue);
   });
   return cy.get("@user");
@@ -73,11 +98,48 @@ function cleanupUser({ email }: { email?: string } = {}) {
   cy.clearCookie("__session");
 }
 
+function createRandomBookGroup() {
+  cy.login();
+
+  const testBookGroup = {
+    name: faker.lorem.words(1),
+    slug: faker.lorem.words(1),
+  };
+
+  cy.get("@userId").then((data) => {
+    createBookGroup({
+      ...testBookGroup,
+      userId: (data as unknown as { userId: string }).userId,
+    });
+  });
+}
+
+function createBookGroup({
+  userId,
+  name,
+  slug,
+}: {
+  userId: string;
+  name: string;
+  slug: string;
+}) {
+  cy.then(() => ({ name, slug })).as("bookGroupData");
+  cy.exec(
+    `npx ts-node --require tsconfig-paths/register ./cypress/support/create-book-group.ts "${userId}" "${name}" "${slug}"`
+  );
+}
+
 function deleteUserByEmail(email: string) {
   cy.exec(
     `npx ts-node --require tsconfig-paths/register ./cypress/support/delete-user.ts "${email}"`
   );
   cy.clearCookie("__session");
+}
+
+function deleteBookGroups() {
+  cy.exec(
+    `npx ts-node --require tsconfig-paths/register ./cypress/support/delete-book-groups.ts`
+  );
 }
 
 // We're waiting a second because of this issue happen randomly
@@ -93,7 +155,8 @@ function visitAndCheck(url: string, waitTime: number = 1000) {
 Cypress.Commands.add("login", login);
 Cypress.Commands.add("cleanupUser", cleanupUser);
 Cypress.Commands.add("visitAndCheck", visitAndCheck);
-
+Cypress.Commands.add("createRandomBookGroup", createRandomBookGroup);
+Cypress.Commands.add("deleteBookGroups", deleteBookGroups);
 /*
 eslint
   @typescript-eslint/no-namespace: "off",

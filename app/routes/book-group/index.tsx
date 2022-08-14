@@ -25,8 +25,8 @@ export default function BookGroups() {
   return (
     <PageContainer>
       <h1>Book groups</h1>
-      <Button className="mb-3" to="/book-group-new">
-        Dodaj nową grupę
+      <Button className="mb-3" variant="secondary" to="/book-group-new">
+        Add new group
       </Button>
       <article className="flex flex-col gap-4">
         {bookGroups.map((bookGroup) => {

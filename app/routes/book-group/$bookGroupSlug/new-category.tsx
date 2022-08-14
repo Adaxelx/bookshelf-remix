@@ -145,13 +145,14 @@ export default function CategoryForm() {
             autoComplete="imageId"
           />
           <div className="flex max-w-full snap-x snap-mandatory snap-center gap-2 overflow-x-scroll">
-            {images.map(({ id, encoded }) => {
+            {images.map(({ id, encoded }, index) => {
               const isActive = id === pickedImageId;
               return (
                 <div
                   key={id}
                   className="relative"
                   onClick={() => setPickedImageId(id)}
+                  data-test={`image${index}`}
                 >
                   <Card
                     className={`h-96 w-64 flex-shrink-0 border-4 transition-colors ${

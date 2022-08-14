@@ -3,6 +3,7 @@ import { faker } from "@faker-js/faker";
 describe("smoke tests", () => {
   afterEach(() => {
     cy.cleanupUser();
+    cy.deleteBookGroups();
   });
 
   it("should allow you to register and login", () => {
@@ -25,31 +26,62 @@ describe("smoke tests", () => {
     cy.findByRole("button", { name: /create account/i }).click();
 
     cy.findByText("Book groups");
-    // cy.findByRole("link", { name: /notes/i }).click();
-    // cy.findByRole("button", { name: /logout/i }).click();
-    // cy.findByRole("link", { name: /log in/i });
   });
 
-  // it("should allow you to make a note", () => {
-  //   const testNote = {
-  //     title: faker.lorem.words(1),
-  //     body: faker.lorem.sentences(1),
-  //   };
-  //   cy.login();
+  it("should create book group", () => {
+    const testBookGroup = {
+      name: faker.lorem.words(1),
+      slug: faker.lorem.words(1),
+    };
+    cy.login();
 
-  //   cy.visitAndCheck("/");
+    cy.visitAndCheck("/book-group");
 
-  //   cy.findByRole("link", { name: /notes/i }).click();
-  //   cy.findByText("No notes yet");
+    cy.findByRole("link", { name: /Add new group/i }).click();
 
-  //   cy.findByRole("link", { name: /\+ new note/i }).click();
+    cy.get("#name").type(testBookGroup.name);
+    cy.get("#slug").type(testBookGroup.slug);
+    cy.findByText("Add").click();
 
-  //   cy.findByRole("textbox", { name: /title/i }).type(testNote.title);
-  //   cy.findByRole("textbox", { name: /body/i }).type(testNote.body);
-  //   cy.findByRole("button", { name: /save/i }).click();
+    cy.login();
+    cy.findByText(testBookGroup.name);
+    cy.url().should("include", `book-group/${testBookGroup.slug}`);
 
-  //   cy.findByRole("button", { name: /delete/i }).click();
+    cy.visitAndCheck("/book-group");
+  });
 
-  //   cy.findByText("No notes yet");
-  // });
+  it("should add new category", () => {
+    cy.createRandomBookGroup();
+
+    cy.get("@bookGroupData").then((bookGroup) =>
+      cy.visitAndCheck(
+        `/book-group/${
+          (bookGroup as unknown as { slug: string }).slug
+        }/new-category`
+      )
+    );
+
+    const testBookCategory = {
+      name: faker.lorem.words(1),
+      slug: faker.lorem.words(1),
+    };
+
+    cy.get("#name").type(testBookCategory.name);
+    cy.get("#slug").type(testBookCategory.slug);
+    cy.get('[data-test="image0"]').click();
+    cy.findByText("Add").click();
+
+    cy.get("@bookGroupData").then((bookGroup) =>
+      cy
+        .url()
+        .should(
+          "include",
+          `/book-group/${
+            (bookGroup as unknown as { slug: string }).slug
+          }/category/${testBookCategory.slug}`
+        )
+    );
+    cy.get("h1").should("have.text", testBookCategory.name);
+    cy.login();
+  });
 });
