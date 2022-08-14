@@ -55,6 +55,8 @@ model BookCategory{
 model Image {
   id String @id @default(cuid())
   encoded   String
+  bookGroup   BookGroup?   @relation(fields: [bookGroupId], references: [slug]) 
+  bookGroupId     String?
   bookCategories BookCategory[]
 }
 
@@ -64,7 +66,7 @@ model BookGroup{
   categories  BookCategory[]
   creatorId String
   name    String 
-
+  images Image[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

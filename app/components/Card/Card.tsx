@@ -1,11 +1,15 @@
+import type { HTMLAttributes } from "react";
+
 export default function Card({
   src,
   alt,
   className = "",
   isBase = true,
-}: CardProps) {
+  ...rest
+}: CardProps & HTMLAttributes<HTMLDivElement>) {
   return (
     <section
+      {...rest}
       className={`relative h-full w-full overflow-hidden rounded-xl bg-primary-600 ${className}`}
     >
       <img

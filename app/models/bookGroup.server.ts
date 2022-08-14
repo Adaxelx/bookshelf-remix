@@ -1,4 +1,4 @@
-import type { User } from "@prisma/client";
+import type { BookGroup, User } from "@prisma/client";
 
 import { prisma } from "~/db.server";
 
@@ -22,6 +22,17 @@ export async function getBookGroup({
   return prisma.bookGroup.findFirst({
     where: {
       users: { some: { userId, bookGroupId } },
+    },
+  });
+}
+
+export async function createBookGroup(
+  bookGroupData: Omit<BookGroup, "updatedAt" | "createdAt">
+) {
+  return prisma.bookGroup.create({
+    data: {
+      ...bookGroupData,
+      users: { create: { userId: bookGroupData.creatorId } },
     },
   });
 }

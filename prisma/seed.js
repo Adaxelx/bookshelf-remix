@@ -92,6 +92,7 @@ async function seed() {
   await prisma.bookCategory.deleteMany({});
   await prisma.bookGroupsToUsers.deleteMany({});
   await prisma.bookGroup.deleteMany({});
+  await prisma.image.deleteMany({});
   await prisma.user.deleteMany({});
 
   const hashedPassword = await bcrypt.hash("testtest", 10);
@@ -150,6 +151,9 @@ async function seed() {
     )
   );
 
+  // const images = await prisma.image.findMany({});
+  // console.log(images);
+
   const bookCategories = await Promise.all(
     bookCategoriesNames.map(({ name, image }, index) =>
       prisma.bookCategory.create({
@@ -158,17 +162,17 @@ async function seed() {
             .split(" ")
             .map((word) => word.toLowerCase())
             .join("-"),
-          bookGroupId: bookGroup.slug,
+          bookGroup: { connect: { slug: bookGroup.slug } },
           name,
           isActive: activeCategory === name,
           wasPicked: wasPicked.some((pickedName) => pickedName === name),
-          imageId: images[index].id,
+          image: { connect: { id: images[index].id } },
         },
       })
     )
   );
 
-  console.log(bookCategories);
+  // console.log(bookCategories);
 
   const books = await Promise.all(
     [bookCategories[crimeIndex], bookCategories[adventureIndex]].map(

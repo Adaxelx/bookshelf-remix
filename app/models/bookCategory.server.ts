@@ -40,3 +40,19 @@ export async function getActiveCategory(bookGroupId: BookGroup["slug"]) {
     },
   });
 }
+
+export async function createCategory({
+  bookGroupId,
+  imageId,
+  ...category
+}: Omit<BookCategory, "wasPicked" | "isActive" | "updatedAt" | "createdAt">) {
+  return prisma.bookCategory.create({
+    data: {
+      bookGroup: { connect: { slug: bookGroupId } },
+      image: { connect: { id: imageId } },
+      ...category,
+      wasPicked: false,
+      isActive: false,
+    },
+  });
+}
