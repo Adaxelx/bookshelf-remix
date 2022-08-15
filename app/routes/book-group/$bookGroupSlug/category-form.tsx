@@ -6,22 +6,42 @@ import {
   useActionData,
   useLoaderData,
   useParams,
+  useTransition,
 } from "@remix-run/react";
 import { useState } from "react";
 import invariant from "tiny-invariant";
 import { Button, Card, Input, PageContainer } from "~/components";
-import { createCategory } from "~/models/bookCategory.server";
+import {
+  createCategory,
+  getCategory,
+  updateCategory,
+} from "~/models/bookCategory.server";
 import { getImages } from "~/models/image.server";
 import { requireUser } from "~/session.server";
 
 import { BsCheckLg } from "react-icons/bs";
+import type { BookCategory } from "@prisma/client";
 
 export async function loader({ request, params }: LoaderArgs) {
   await requireUser(request);
   invariant(params.bookGroupSlug, "Slug is required");
+  const url = new URL(request.url);
+  const slug = url.searchParams.get("slug");
+
+  let category: Pick<BookCategory, "name" | "slug" | "imageId"> | null = null;
+
+  if (slug) {
+    const categoryData = await getCategory(slug);
+    invariant(categoryData, "No category for this slug");
+    category = {
+      name: categoryData.name,
+      slug: categoryData.slug,
+      imageId: categoryData.imageId,
+    };
+  }
 
   const images = await getImages(params.bookGroupSlug);
-  return json({ images });
+  return json({ images, category });
 }
 
 export async function action({ request, params }: ActionArgs) {
@@ -30,6 +50,8 @@ export async function action({ request, params }: ActionArgs) {
   const name = formData.get("name");
   const slug = formData.get("slug");
   const imageId = formData.get("imageId");
+  const intent = formData.get("intent");
+  const prevSlug = formData.get("prevSlug");
 
   invariant(params.bookGroupSlug, "Book group name must be defined.");
 
@@ -72,12 +94,27 @@ export async function action({ request, params }: ActionArgs) {
     );
   }
 
-  const category = await createCategory({
+  const data = {
     name,
-    bookGroupId: params.bookGroupSlug,
     slug,
     imageId,
-  });
+  };
+
+  let category: BookCategory | null = null;
+
+  if (intent === "add") {
+    category = await createCategory({
+      ...data,
+      bookGroupId: params.bookGroupSlug,
+    });
+  } else if (intent === "update") {
+    if (typeof prevSlug !== "string" || prevSlug.length === 0) {
+      throw new Error("Missing prevSlug");
+    }
+    category = await updateCategory({ ...data, prevSlug });
+  }
+
+  invariant(category, "Unknown intent ");
 
   return redirect(
     `/book-group/${params.bookGroupSlug}/category/${category.slug}`
@@ -87,22 +124,37 @@ export async function action({ request, params }: ActionArgs) {
 const inputClassName = "";
 
 export default function CategoryForm() {
-  const { images } = useLoaderData<typeof loader>();
+  const { images, category } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const { bookGroupSlug } = useParams();
-  const [pickedImageId, setPickedImageId] = useState("");
+  const [pickedImageId, setPickedImageId] = useState(category?.imageId);
+
+  const isEdit = Boolean(category);
+
+  const transition = useTransition();
+  const isUpdating =
+    transition?.submission?.formData.get("intent") === "update";
+  const isAdding = transition?.submission?.formData.get("intent") === "add";
+
+  console.log(pickedImageId);
 
   return (
     <PageContainer className="gap-4">
-      <h1>{`New category for book group ${bookGroupSlug}`}</h1>
+      <h1>
+        {isEdit
+          ? `Editting category ${category?.name}`
+          : `New category for book group ${bookGroupSlug}`}
+      </h1>
       <Form method="post" className="flex flex-col items-center gap-4">
         <div className="flex w-full flex-col gap-4 md:grid md:grid-cols-2 md:gap-4">
+          <input hidden name="prevSlug" value={category?.slug} />
           <Input
             className={inputClassName}
             label={<label htmlFor="name">Name of category</label>}
             input={
               <input
                 // ref={emailRef}
+                defaultValue={category?.name}
                 id="name"
                 autoFocus={true}
                 name="name"
@@ -119,6 +171,7 @@ export default function CategoryForm() {
             input={
               <input
                 // ref={emailRef}
+                defaultValue={category?.slug}
                 id="slug"
                 autoFocus={true}
                 name="slug"
@@ -139,7 +192,7 @@ export default function CategoryForm() {
           </label>
           <input
             hidden
-            defaultValue={pickedImageId}
+            value={pickedImageId}
             name="imageId"
             id="imageId"
             autoComplete="imageId"
@@ -184,8 +237,15 @@ export default function CategoryForm() {
             </div>
           ) : null}
         </div>
-        <Button type="submit" className="w-full md:w-64">
-          Add
+        <Button
+          type="submit"
+          className="w-full md:w-64"
+          name="intent"
+          value={isEdit ? "update" : "add"}
+          disabled={isUpdating || isAdding}
+        >
+          {isEdit ? (isUpdating ? "Updating..." : "Update") : null}
+          {isEdit ? null : isAdding ? "Creating..." : "Create"}
         </Button>
       </Form>
     </PageContainer>

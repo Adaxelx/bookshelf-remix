@@ -1,7 +1,13 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, useActionData, useCatch, useLoaderData } from "@remix-run/react";
+import {
+  Form,
+  useActionData,
+  useCatch,
+  useLoaderData,
+  useParams,
+} from "@remix-run/react";
 import invariant from "tiny-invariant";
 import {
   Alert,
@@ -134,7 +140,7 @@ export default function CategoryPage() {
   const { name } = bookCategory;
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
+  const { bookGroupSlug, categorySlug } = useParams();
   return (
     <PageContainer className="gap-4">
       <header className="flex flex-col gap-2">
@@ -153,7 +159,11 @@ export default function CategoryPage() {
         ) : null}
       </header>
       <section className="flex gap-2">
-        <Button to={`edit`}>Edit</Button>
+        <Button
+          to={`/book-group/${bookGroupSlug}/category-form?slug=${categorySlug}`}
+        >
+          Edit
+        </Button>
         <Button colorVariant="error" onClick={() => setIsDeleteModalOpen(true)}>
           Delete
         </Button>

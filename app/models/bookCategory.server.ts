@@ -57,6 +57,25 @@ export async function createCategory({
   });
 }
 
+export async function updateCategory({
+  imageId,
+  prevSlug,
+  ...category
+}: Omit<
+  BookCategory,
+  "wasPicked" | "isActive" | "updatedAt" | "createdAt" | "bookGroupId"
+> & { prevSlug: BookCategory["slug"] }) {
+  return prisma.bookCategory.update({
+    where: {
+      slug: prevSlug,
+    },
+    data: {
+      image: { connect: { id: imageId } },
+      ...category,
+    },
+  });
+}
+
 export async function deleteCategory(slug: BookCategory["slug"]) {
   return prisma.bookCategory.delete({ where: { slug } });
 }
