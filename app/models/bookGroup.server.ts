@@ -45,3 +45,9 @@ export async function editBookGroup(
     data: bookGroupData,
   });
 }
+
+export async function deleteBookGroup(slug: BookGroup["slug"]) {
+  return prisma.bookGroup.delete({
+    where: { slug },
+  });
+}

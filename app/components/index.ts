@@ -5,3 +5,7 @@ export { default as PageContainer } from "./PageContainer";
 export { default as ErrorFallback } from "./ErrorFallback";
 export { default as Input } from "./Input";
 export { default as Alert } from "./Alert";
+export {
+  default as DeleteModal,
+  links as deleteModalLinks,
+} from "./DeleteModal";

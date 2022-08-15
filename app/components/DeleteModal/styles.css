@@ -1,0 +1,6 @@
+[data-reach-dialog-content] {
+  border-radius: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}

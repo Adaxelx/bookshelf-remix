@@ -10,7 +10,7 @@ generator client {
 
 model Opinion{
   id    String @id @default(cuid())
-  book  Book  @relation(fields: [bookId], references: [slug])
+  book  Book  @relation(fields: [bookId], references: [slug], onDelete: Cascade)
   bookId String
   description String
   user  User @relation(fields: [userId], references: [id])
@@ -24,7 +24,7 @@ model Opinion{
 
 model Book{
   slug    String @id @default(cuid())
-  category    BookCategory @relation(fields: [categoryId], references: [slug])
+  category    BookCategory @relation(fields: [categoryId], references: [slug], onDelete: Cascade)
   categoryId    String @unique
   title   String
   author    String
@@ -39,7 +39,7 @@ model Book{
 
 model BookCategory{
   slug    String @id @default(cuid())
-  bookGroup   BookGroup   @relation(fields: [bookGroupId], references: [slug])
+  bookGroup   BookGroup   @relation(fields: [bookGroupId], references: [slug], onDelete: Cascade)
   bookGroupId     String
   name      String
   isActive  Boolean @default(false)
@@ -55,7 +55,7 @@ model BookCategory{
 model Image {
   id String @id @default(cuid())
   encoded   String
-  bookGroup   BookGroup?   @relation(fields: [bookGroupId], references: [slug]) 
+  bookGroup   BookGroup?   @relation(fields: [bookGroupId], references: [slug], onDelete: Cascade) 
   bookGroupId     String?
   bookCategories BookCategory[]
 }
@@ -86,9 +86,9 @@ model User {
 }
 
 model BookGroupsToUsers {
-  bookGroup       BookGroup     @relation(fields: [bookGroupId], references: [slug])
+  bookGroup       BookGroup     @relation(fields: [bookGroupId], references: [slug], onDelete: Cascade)
   bookGroupId    String // relation scalar field (used in the `@relation` attribute above)
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String // relation scalar field (used in the `@relation` attribute above)
   @@id([userId,bookGroupId])
 }

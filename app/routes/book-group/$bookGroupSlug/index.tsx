@@ -1,4 +1,5 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
+import { redirect } from "@remix-run/node";
 
 import { json } from "@remix-run/node";
 import { Form, useActionData, useCatch, useLoaderData } from "@remix-run/react";
@@ -6,23 +7,27 @@ import invariant from "tiny-invariant";
 import {
   Button,
   Card,
+  DeleteModal,
   ErrorFallback,
   FlipCard,
   flipCardLinks,
   PageContainer,
+  deleteModalLinks,
 } from "~/components";
 import {
   getCategories,
   getCategory,
   setActiveCategory,
 } from "~/models/bookCategory.server";
-import { getBookGroup } from "~/models/bookGroup.server";
+import { deleteBookGroup, getBookGroup } from "~/models/bookGroup.server";
 import { getImage } from "~/models/image.server";
 import { requireUser } from "~/session.server";
 import backImage from "public/assets/Back.jpg";
+import { useState } from "react";
 
 export const links = () => [
   ...flipCardLinks(),
+  ...deleteModalLinks(),
   { rel: "image", href: backImage },
 ];
 
@@ -51,9 +56,17 @@ export async function loader({ request, params }: LoaderArgs) {
   });
 }
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request, params }: ActionArgs) {
   const formData = await request.formData();
   const slug = formData.get("randomCategory");
+  const intent = formData.get("intent");
+
+  invariant(params.bookGroupSlug, "Book group is required");
+
+  if (intent === "delete") {
+    await deleteBookGroup(params.bookGroupSlug);
+    return redirect(`/book-group`);
+  }
 
   invariant(typeof slug === "string", "Missing random category");
   const category = await getCategory(slug);
@@ -72,6 +85,7 @@ export default function BookGroup() {
     useLoaderData<typeof loader>();
   const randomCategory = useActionData<typeof action>();
 
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   return (
     <PageContainer>
       <div className="shrink grow basis-0">
@@ -88,6 +102,13 @@ export default function BookGroup() {
             variant="secondary"
           >
             Edytuj grupę
+          </Button>
+          <Button
+            variant="secondary"
+            colorVariant="error"
+            onClick={() => setIsDeleteModalOpen(true)}
+          >
+            Remove group book
           </Button>
           {activeBookCategory ? (
             <Button
@@ -130,6 +151,28 @@ export default function BookGroup() {
           back={<Card src={backImage} alt="Back of card" isBase={false} />}
         />
       ) : null}
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title={"Are you sure you want delete?"}
+        content={
+          "This action is not reversible and after that you will lose whole history of books, all categories, opinions and custom images added for this group."
+        }
+        actions={
+          <>
+            <Button onClick={() => setIsDeleteModalOpen(false)}>Keep it</Button>
+            <Button
+              colorVariant="error"
+              variant="secondary"
+              type="submit"
+              name="intent"
+              value="delete"
+            >
+              Delete
+            </Button>
+          </>
+        }
+      />
     </PageContainer>
   );
 }
