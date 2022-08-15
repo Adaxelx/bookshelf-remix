@@ -44,13 +44,13 @@ describe("smoke tests", () => {
       cy.then(() => ({ ...testBookGroup })).as("bookGroupData");
       cy.login();
 
-      cy.visitAndCheck("/book-group-new");
+      cy.visitAndCheck("/book-group-form");
 
       // cy.findByRole("link", { name: /Add new group/i }).click();
 
       cy.get("#name").type(testBookGroup.name);
       cy.get("#slug").type(testBookGroup.slug);
-      cy.findByText("Add").click();
+      cy.findByText("Create").click();
 
       cy.get("h1").should("have.text", testBookGroup.name);
       cy.url().should("include", `book-group/${testBookGroup.slug}`);
@@ -85,7 +85,7 @@ describe("smoke tests", () => {
       cy.get("#name").type(testBookCategory.name);
       cy.get("#slug").type(testBookCategory.slug);
       cy.get('[data-test="image0"]').click();
-      cy.findByText("Add").click();
+      cy.findByText("Create").click();
 
       cy.get("@bookGroupData").then((bookGroup) =>
         cy
