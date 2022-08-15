@@ -10,8 +10,8 @@ cmd = "start.sh"
 entrypoint = "sh"
 
 [mounts]
-source = "data"
-destination = "/data"
+source="bookclub_data"
+destination="/data"
 
 [[services]]
 internal_port = 8_080
