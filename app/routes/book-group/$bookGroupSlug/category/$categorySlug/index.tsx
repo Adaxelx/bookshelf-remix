@@ -7,16 +7,21 @@ import {
   Alert,
   Button,
   Card,
+  DeleteModal,
+  deleteModalLinks,
   ErrorFallback,
   Input,
   PageContainer,
 } from "~/components";
 import { getBook } from "~/models/book.server";
-import { getCategory } from "~/models/bookCategory.server";
+import { deleteCategory, getCategory } from "~/models/bookCategory.server";
 import { getImage } from "~/models/image.server";
 import { requireUser } from "~/session.server";
 import dayjs from "dayjs";
 import { addOpinion, getOpinions } from "~/models/opinion.server";
+import { useState } from "react";
+
+export const links = () => [...deleteModalLinks()];
 
 export async function loader({ request, params }: LoaderArgs) {
   await requireUser(request);
@@ -63,8 +68,15 @@ export async function action({ request, params }: ActionArgs) {
   const formDataRate = formData.get("rate");
   const description = formData.get("description");
   const bookId = formData.get("bookId");
+  const intent = formData.get("intent");
 
-  invariant(params.categoryName, "Category name must be defined.");
+  invariant(params.bookGroupSlug, "Book group slug must be defined");
+  invariant(params.categorySlug, "Category name must be defined.");
+  if (intent === "delete") {
+    await deleteCategory(params.categorySlug);
+    return redirect(`/book-group/${params.bookGroupSlug}/category`);
+  }
+
   const rate = Number(formDataRate);
   if (typeof rate !== "number" || rate < 0 || rate > 10) {
     return json(
@@ -111,7 +123,7 @@ export async function action({ request, params }: ActionArgs) {
     userId: user.id,
   });
 
-  return redirect(`/book-group/${params.bookGroupSlug}/${params.categoryName}`);
+  return redirect(`/book-group/${params.bookGroupSlug}/${params.categorySlug}`);
 }
 
 export default function CategoryPage() {
@@ -120,6 +132,8 @@ export default function CategoryPage() {
 
   const actionData = useActionData<typeof action>();
   const { name } = bookCategory;
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   return (
     <PageContainer className="gap-4">
@@ -140,7 +154,9 @@ export default function CategoryPage() {
       </header>
       <section className="flex gap-2">
         <Button to={`edit`}>Edit</Button>
-        <Button colorVariant="error">Delete</Button>
+        <Button colorVariant="error" onClick={() => setIsDeleteModalOpen(true)}>
+          Delete
+        </Button>
       </section>
       <main className="flex max-h-[40rem] flex-col gap-4 md:flex-row">
         <div className="max-h-[40rem] max-w-sm self-center">
@@ -261,6 +277,28 @@ export default function CategoryPage() {
           )}
         </section>
       </main>
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title={"Are you sure you want delete?"}
+        content={
+          "This action is not reversible and after that you will lose added book and all opinions."
+        }
+        actions={
+          <>
+            <Button onClick={() => setIsDeleteModalOpen(false)}>Keep it</Button>
+            <Button
+              colorVariant="error"
+              variant="secondary"
+              type="submit"
+              name="intent"
+              value="delete"
+            >
+              Delete
+            </Button>
+          </>
+        }
+      />
     </PageContainer>
   );
 }

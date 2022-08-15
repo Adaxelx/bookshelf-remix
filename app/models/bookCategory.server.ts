@@ -56,3 +56,7 @@ export async function createCategory({
     },
   });
 }
+
+export async function deleteCategory(slug: BookCategory["slug"]) {
+  return prisma.bookCategory.delete({ where: { slug } });
+}
