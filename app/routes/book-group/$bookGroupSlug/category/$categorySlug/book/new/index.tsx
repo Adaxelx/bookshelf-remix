@@ -13,7 +13,7 @@ export async function action({ request, params }: ActionArgs) {
   const dateStart = formData.get("dateStart");
   const dateEnd = formData.get("dateEnd");
 
-  invariant(params.categoryName, "Category name must be defined.");
+  invariant(params.categorySlug, "Category name must be defined.");
 
   if (typeof title !== "string" || title.length === 0) {
     return json(
@@ -82,10 +82,10 @@ export async function action({ request, params }: ActionArgs) {
       .split(" ")
       .join("-"),
     author,
-    categoryId: params.categoryName,
+    categoryId: params.categorySlug,
   });
 
-  return redirect(`/book-group/${params.bookGroupSlug}/${params.categoryName}`);
+  return redirect(`/book-group/${params.bookGroupSlug}/${params.categorySlug}`);
 }
 
 const inputClassName = "";
