@@ -28,14 +28,28 @@ declare global {
       cleanupUser: typeof cleanupUser;
 
       /**
-       * Deletes all book groups
+       * Deletes specific @bookGroupData
        *
-       * @returns {typeof deleteBookGroups}
+       * @returns {typeof cleanupBookGroup}
        * @memberof Chainable
        * @example
-       *    cy. deleteBookGroups()
+       *    cy.cleanupBookGroup()
+       * @example
+       *    cy.cleanupBookGroup({ slug: '123' })
        */
-      deleteBookGroups: typeof deleteBookGroups;
+      cleanupBookGroup: typeof cleanupBookGroup;
+
+      /**
+       * Deletes specific @bookCategoryData
+       *
+       * @returns {typeof cleanupBookCategory}
+       * @memberof Chainable
+       * @example
+       *    cy.cleanupBookCategory()
+       * @example
+       *    cy.cleanupBookCategory({ slug: '123' })
+       */
+      cleanupBookCategory: typeof cleanupBookCategory;
 
       /**
        * Create random book group
@@ -136,9 +150,41 @@ function deleteUserByEmail(email: string) {
   cy.clearCookie("__session");
 }
 
-function deleteBookGroups() {
+function cleanupBookGroup({ slug }: { slug?: string } = {}) {
+  if (slug) {
+    deleteBookGroupBySlug(slug);
+  } else {
+    cy.get("@bookGroupData").then((bookGroup) => {
+      const slug = (bookGroup as { name?: string; slug?: string }).slug;
+      if (slug) {
+        deleteBookGroupBySlug(slug);
+      }
+    });
+  }
+}
+
+function deleteBookGroupBySlug(slug: string) {
   cy.exec(
-    `npx ts-node --require tsconfig-paths/register ./cypress/support/delete-book-groups.ts`
+    `npx ts-node --require tsconfig-paths/register ./cypress/support/delete-book-group.ts "${slug}"`
+  );
+}
+
+function cleanupBookCategory({ slug }: { slug?: string } = {}) {
+  if (slug) {
+    deleteBookCategoryBySlug(slug);
+  } else {
+    cy.get("@bookCategoryData").then((bookGroup) => {
+      const slug = (bookGroup as { name?: string; slug?: string }).slug;
+      if (slug) {
+        deleteBookCategoryBySlug(slug);
+      }
+    });
+  }
+}
+
+function deleteBookCategoryBySlug(slug: string) {
+  cy.exec(
+    `npx ts-node --require tsconfig-paths/register ./cypress/support/delete-book-category.ts "${slug}"`
   );
 }
 
@@ -156,7 +202,8 @@ Cypress.Commands.add("login", login);
 Cypress.Commands.add("cleanupUser", cleanupUser);
 Cypress.Commands.add("visitAndCheck", visitAndCheck);
 Cypress.Commands.add("createRandomBookGroup", createRandomBookGroup);
-Cypress.Commands.add("deleteBookGroups", deleteBookGroups);
+Cypress.Commands.add("cleanupBookGroup", cleanupBookGroup);
+Cypress.Commands.add("cleanupBookCategory", cleanupBookCategory);
 /*
 eslint
   @typescript-eslint/no-namespace: "off",
