@@ -125,17 +125,23 @@ export default function CategoryPage() {
     <PageContainer className="gap-4">
       <header className="flex flex-col gap-2">
         <h1>{name}</h1>
-        <div className="flex gap-2">
-          {bookCategory.isActive ? (
-            <div className="rounded bg-primary-600 px-3 py-1">Active</div>
-          ) : null}
-          {bookCategory.wasPicked ? (
-            <div className="rounded bg-primary-600 px-3 py-1">
-              Already picked
-            </div>
-          ) : null}
-        </div>
+        {bookCategory.isActive || bookCategory.wasPicked ? (
+          <div className="flex gap-2">
+            {bookCategory.isActive ? (
+              <div className="rounded bg-primary-600 px-3 py-1">Active</div>
+            ) : null}
+            {bookCategory.wasPicked ? (
+              <div className="rounded bg-primary-600 px-3 py-1">
+                Already picked
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </header>
+      <section className="flex gap-2">
+        <Button to={`edit`}>Edit</Button>
+        <Button colorVariant="error">Delete</Button>
+      </section>
       <main className="flex max-h-[40rem] flex-col gap-4 md:flex-row">
         <div className="max-h-[40rem] max-w-sm self-center">
           <Card src={image} alt={`Card for category ${bookCategory.name}`} />
@@ -245,10 +251,13 @@ export default function CategoryPage() {
                 </Form>
               </section>
             </article>
-          ) : (
+          ) : null}
+          {!book && (bookCategory.isActive || bookCategory.wasPicked) ? (
             <Button variant="secondary" to="book/new">
               Add book
             </Button>
+          ) : (
+            <Alert variant="info">Category must be active to add book.</Alert>
           )}
         </section>
       </main>

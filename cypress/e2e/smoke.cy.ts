@@ -71,7 +71,7 @@ describe("smoke tests", () => {
         cy.visitAndCheck(
           `/book-group/${
             (bookGroup as unknown as { slug: string }).slug
-          }/new-category`
+          }/category-form`
         )
       );
 

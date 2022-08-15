@@ -45,7 +45,7 @@ export async function loader({ request, params }: LoaderArgs) {
 
   const bookCategories = await getCategories(params.bookGroupSlug);
   return json({
-    bookGroup: { name: bookGroup.name },
+    bookGroup: { name: bookGroup.name, slug: bookGroup.slug },
     bookCategories: bookCategories.map(({ slug }) => slug),
     activeBookCategory: bookCategories.find(({ isActive }) => isActive),
   });
@@ -76,12 +76,18 @@ export default function BookGroup() {
     <PageContainer>
       <div className="shrink grow basis-0">
         <h1>{bookGroup.name}</h1>
-        <section className="mb-3 flex flex-col md:flex-row">
+        <section className="mb-3 flex flex-col gap-2 md:flex-row">
           <Button to="category" variant="secondary">
             Lista kategorii
           </Button>
-          <Button to="new-category" variant="secondary">
+          <Button to="category-form" variant="secondary">
             Nowa kategoria
+          </Button>
+          <Button
+            to={`/book-group-form?slug=${bookGroup.slug}`}
+            variant="secondary"
+          >
+            Edytuj grupę
           </Button>
           {activeBookCategory ? (
             <Button

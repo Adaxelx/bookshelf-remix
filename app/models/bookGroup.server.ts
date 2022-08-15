@@ -36,3 +36,12 @@ export async function createBookGroup(
     },
   });
 }
+
+export async function editBookGroup(
+  bookGroupData: Omit<BookGroup, "updatedAt" | "createdAt" | "creatorId">
+) {
+  return prisma.bookGroup.update({
+    where: { slug: bookGroupData.slug },
+    data: bookGroupData,
+  });
+}
