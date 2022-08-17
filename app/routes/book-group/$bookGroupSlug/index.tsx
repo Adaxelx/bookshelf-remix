@@ -93,7 +93,7 @@ export default function BookGroup() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   return (
     <PageContainer>
-      <div className="shrink grow basis-0">
+      <div className="flex shrink grow basis-0 flex-col gap-4">
         <h1>{bookGroup.name}</h1>
         <section className="mb-3 flex flex-col gap-2 md:flex-row">
           <Button to="category" variant="secondary" prefetch="intent">
@@ -104,7 +104,9 @@ export default function BookGroup() {
               <Button to="category-form" variant="secondary" prefetch="intent">
                 Nowa kategoria
               </Button>
-
+              <Button to="add-user" variant="secondary" prefetch="intent">
+                Dodaj użytkownika
+              </Button>
               <Button
                 to={`/book-group-form?slug=${bookGroup.slug}`}
                 prefetch="intent"
