@@ -1,8 +1,10 @@
 import { createCookieSessionStorage, redirect } from "@remix-run/node";
+import type { Params } from "@remix-run/react";
 import invariant from "tiny-invariant";
 
 import type { User } from "~/models/user.server";
 import { getUserById } from "~/models/user.server";
+import { getBookByCategoryIdGroup } from "./models/bookGroup.server";
 
 invariant(process.env.SESSION_SECRET, "SESSION_SECRET must be set");
 
@@ -61,6 +63,23 @@ export async function requireUser(request: Request) {
   if (user) return user;
 
   throw await logout(request);
+}
+
+export async function requireAdminUser(request: Request, params: Params) {
+  const userId = await requireUserId(request);
+
+  invariant(params.bookGroupSlug, "Book group slug is missing.");
+
+  const bookGroup = await getBookByCategoryIdGroup({
+    userId,
+    bookGroupId: params.bookGroupSlug,
+  });
+
+  if (bookGroup?.creatorId === userId) {
+    return bookGroup;
+  }
+
+  return redirect(`/book-group/${params.bookGroupSlug}`);
 }
 
 export async function createUserSession({

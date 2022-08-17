@@ -19,7 +19,10 @@ import {
   getCategory,
   setActiveCategory,
 } from "~/models/bookCategory.server";
-import { deleteBookGroup, getBookGroup } from "~/models/bookGroup.server";
+import {
+  deleteBookGroup,
+  getBookByCategoryIdGroup,
+} from "~/models/bookGroup.server";
 import { getImage } from "~/models/image.server";
 import { requireUser } from "~/session.server";
 import backImage from "public/assets/Back.jpg";
@@ -34,7 +37,7 @@ export const links = () => [
 export async function loader({ request, params }: LoaderArgs) {
   const user = await requireUser(request);
   invariant(params.bookGroupSlug, "Slug is required");
-  const bookGroup = await getBookGroup({
+  const bookGroup = await getBookByCategoryIdGroup({
     userId: user.id,
     bookGroupId: params.bookGroupSlug,
   });
@@ -91,14 +94,15 @@ export default function BookGroup() {
       <div className="shrink grow basis-0">
         <h1>{bookGroup.name}</h1>
         <section className="mb-3 flex flex-col gap-2 md:flex-row">
-          <Button to="category" variant="secondary">
+          <Button to="category" variant="secondary" prefetch="intent">
             Lista kategorii
           </Button>
-          <Button to="category-form" variant="secondary">
+          <Button to="category-form" variant="secondary" prefetch="intent">
             Nowa kategoria
           </Button>
           <Button
             to={`/book-group-form?slug=${bookGroup.slug}`}
+            prefetch="intent"
             variant="secondary"
           >
             Edytuj grupę
@@ -114,6 +118,7 @@ export default function BookGroup() {
             <Button
               to={`category/${activeBookCategory.slug}`}
               variant="secondary"
+              prefetch="intent"
             >
               Pokaż aktywną kategorię
             </Button>

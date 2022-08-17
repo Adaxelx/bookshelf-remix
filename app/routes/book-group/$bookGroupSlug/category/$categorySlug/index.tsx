@@ -19,13 +19,14 @@ import {
   Input,
   PageContainer,
 } from "~/components";
-import { getBook } from "~/models/book.server";
+import { deleteBook, getBookByCategoryId } from "~/models/book.server";
 import { deleteCategory, getCategory } from "~/models/bookCategory.server";
 import { getImage } from "~/models/image.server";
 import { requireUser } from "~/session.server";
 import dayjs from "dayjs";
 import { addOpinion, getOpinions } from "~/models/opinion.server";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { Nullable } from "~/utils";
 
 export const links = () => [...deleteModalLinks()];
 
@@ -46,7 +47,7 @@ export async function loader({ request, params }: LoaderArgs) {
     image,
     `Image not found for category ${bookCategory.name}. Something went wrong.`
   );
-  const book = await getBook(bookCategory.slug);
+  const book = await getBookByCategoryId(bookCategory.slug);
   let opinions: Awaited<ReturnType<typeof getOpinions>> = [];
   if (book) {
     opinions = await getOpinions(book.slug);
@@ -78,9 +79,16 @@ export async function action({ request, params }: ActionArgs) {
 
   invariant(params.bookGroupSlug, "Book group slug must be defined");
   invariant(params.categorySlug, "Category name must be defined.");
-  if (intent === "delete") {
+  if (intent === "delete-category") {
     await deleteCategory(params.categorySlug);
     return redirect(`/book-group/${params.bookGroupSlug}/category`);
+  }
+  if (intent === "delete-book") {
+    await deleteBook(params.categorySlug);
+    return json({
+      errors: { rate: null, description: null, bookId: null },
+      shouldCloseModal: true,
+    });
   }
 
   const rate = Number(formDataRate);
@@ -92,6 +100,7 @@ export async function action({ request, params }: ActionArgs) {
           description: null,
           bookId: null,
         },
+        shouldCloseModal: false,
       },
       { status: 400 }
     );
@@ -105,6 +114,7 @@ export async function action({ request, params }: ActionArgs) {
           description: "Description is required",
           bookId: null,
         },
+        shouldCloseModal: false,
       },
       { status: 400 }
     );
@@ -117,6 +127,7 @@ export async function action({ request, params }: ActionArgs) {
           description: null,
           bookId: "Book is required to create opinion",
         },
+        shouldCloseModal: false,
       },
       { status: 400 }
     );
@@ -129,8 +140,12 @@ export async function action({ request, params }: ActionArgs) {
     userId: user.id,
   });
 
-  return redirect(`/book-group/${params.bookGroupSlug}/${params.categorySlug}`);
+  return redirect(
+    `/book-group/${params.bookGroupSlug}/category/${params.categorySlug}`
+  );
 }
+
+type DeleteModalTypes = Nullable<"category" | "opinion" | "book">;
 
 export default function CategoryPage() {
   const { bookCategory, image, book, opinions } =
@@ -139,8 +154,22 @@ export default function CategoryPage() {
   const actionData = useActionData<typeof action>();
   const { name } = bookCategory;
 
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] =
+    useState<DeleteModalTypes>(null);
   const { bookGroupSlug, categorySlug } = useParams();
+
+  const isBookPresent = book;
+  const wasBookActiveOrPicked = bookCategory.isActive || bookCategory.wasPicked;
+  const shouldShowAddBookButton = !isBookPresent && wasBookActiveOrPicked;
+  const shouldShowNoActiveCategoryAlert =
+    !isBookPresent && !wasBookActiveOrPicked;
+
+  useEffect(() => {
+    if (actionData?.shouldCloseModal) {
+      setIsDeleteModalOpen(null);
+    }
+  }, [actionData?.shouldCloseModal]);
+
   return (
     <PageContainer className="gap-4">
       <header className="flex flex-col gap-2">
@@ -160,11 +189,16 @@ export default function CategoryPage() {
       </header>
       <section className="flex gap-2">
         <Button
+          variant="secondary"
+          prefetch="intent"
           to={`/book-group/${bookGroupSlug}/category-form?slug=${categorySlug}`}
         >
           Edit
         </Button>
-        <Button colorVariant="error" onClick={() => setIsDeleteModalOpen(true)}>
+        <Button
+          colorVariant="error"
+          onClick={() => setIsDeleteModalOpen("category")}
+        >
           Delete
         </Button>
       </section>
@@ -175,13 +209,25 @@ export default function CategoryPage() {
         <section className="flex grow flex-col gap-4 rounded bg-primary-300 p-3">
           <div className="flex flex-col gap-1 md:flex-row md:gap-4">
             <h2 className="text-primary-700">Choosen book</h2>
-            {book ? (
-              <Button variant="secondary" to="book/new">
-                Edit book
-              </Button>
+            {isBookPresent ? (
+              <>
+                <Button
+                  variant="secondary"
+                  to={`book-form?slug=${book.slug}`}
+                  prefetch="intent"
+                >
+                  Edit book
+                </Button>
+                <Button
+                  colorVariant="error"
+                  onClick={() => setIsDeleteModalOpen("book")}
+                >
+                  Delete
+                </Button>
+              </>
             ) : null}
           </div>
-          {book ? (
+          {isBookPresent ? (
             <article className="flex shrink grow basis-0 flex-col gap-4">
               <section className="grid grid-cols-2 grid-rows-4 gap-y-2">
                 <span className="text text-secondary-600">Title:</span>
@@ -201,13 +247,14 @@ export default function CategoryPage() {
                 <h4 className="text-primary-700">
                   Opinions after reading a book:
                 </h4>
-                {opinions.length === 0 ? (
-                  <Alert variant="info">
-                    Currently there are no opinons. Be first critic!
-                  </Alert>
-                ) : (
-                  <section className="flex flex-col gap-1 overflow-auto md:min-h-[192px] md:shrink md:grow  md:basis-0">
-                    {opinions.map(({ id, rate, description, user }) => {
+
+                <section className="flex flex-col gap-1 overflow-auto md:min-h-[192px] md:shrink md:grow  md:basis-0">
+                  {opinions.length === 0 ? (
+                    <Alert variant="info">
+                      Currently there are no opinons. Be first critic!
+                    </Alert>
+                  ) : (
+                    opinions.map(({ id, rate, description, user }) => {
                       const color = getColor(rate);
                       return (
                         <div
@@ -225,9 +272,9 @@ export default function CategoryPage() {
                           <p className="text-secondary-800">~ {user.name}</p>
                         </div>
                       );
-                    })}
-                  </section>
-                )}
+                    })
+                  )}
+                </section>
                 <Form method="post" className="flex items-start gap-1">
                   <Input
                     className="w-12"
@@ -278,31 +325,30 @@ export default function CategoryPage() {
               </section>
             </article>
           ) : null}
-          {!book && (bookCategory.isActive || bookCategory.wasPicked) ? (
-            <Button variant="secondary" to="book/new">
+          {shouldShowAddBookButton ? (
+            <Button variant="secondary" to="book-form" prefetch="intent">
               Add book
             </Button>
-          ) : (
+          ) : null}
+          {shouldShowNoActiveCategoryAlert ? (
             <Alert variant="info">Category must be active to add book.</Alert>
-          )}
+          ) : null}
         </section>
       </main>
       <DeleteModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        title={"Are you sure you want delete?"}
-        content={
-          "This action is not reversible and after that you will lose added book and all opinions."
-        }
+        isOpen={Boolean(isDeleteModalOpen)}
+        onClose={() => setIsDeleteModalOpen(null)}
+        title={getTitle(isDeleteModalOpen)}
+        content={getContent(isDeleteModalOpen)}
         actions={
           <>
-            <Button onClick={() => setIsDeleteModalOpen(false)}>Keep it</Button>
+            <Button onClick={() => setIsDeleteModalOpen(null)}>Keep it</Button>
             <Button
               colorVariant="error"
               variant="secondary"
               type="submit"
               name="intent"
-              value="delete"
+              value={`delete-${isDeleteModalOpen}`}
             >
               Delete
             </Button>
@@ -312,6 +358,32 @@ export default function CategoryPage() {
     </PageContainer>
   );
 }
+
+const getTitle = (modalType: DeleteModalTypes) => {
+  switch (modalType) {
+    case "category":
+      return "Are you sure you want delete this category?";
+    case "book":
+      return "Are you sure you want delete this book?";
+    case "opinion":
+      return "Are you sure you want delete this opinion?";
+    default:
+      return "";
+  }
+};
+
+const getContent = (modalType: DeleteModalTypes) => {
+  switch (modalType) {
+    case "category":
+      return "This action is not reversible and after that you will lose added book and all opinions.";
+    case "book":
+      return "This action is not reversible and after that you will lose all opinions attached to book.";
+    case "opinion":
+      return "This action is not reversible.";
+    default:
+      return "";
+  }
+};
 
 const getColor = (rate: number) => {
   if (rate < 4) {

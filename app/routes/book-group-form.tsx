@@ -14,7 +14,7 @@ import { Button, ErrorFallback, Input, PageContainer } from "~/components";
 import {
   createBookGroup,
   editBookGroup,
-  getBookGroup,
+  getBookByCategoryIdGroup,
 } from "~/models/bookGroup.server";
 import { requireUserId } from "~/session.server";
 
@@ -25,7 +25,10 @@ export async function loader({ request }: LoaderArgs) {
 
   if (!slug) return json({ bookGroup: null });
 
-  const bookGroup = await getBookGroup({ userId, bookGroupId: slug });
+  const bookGroup = await getBookByCategoryIdGroup({
+    userId,
+    bookGroupId: slug,
+  });
 
   invariant(bookGroup, `Can not find book group with slug ${slug}`);
 

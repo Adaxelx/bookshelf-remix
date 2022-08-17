@@ -1,7 +1,7 @@
 import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
-import { Link } from "react-router-dom";
+import { Link, useLoaderData } from "@remix-run/react";
+
 import invariant from "tiny-invariant";
 import { PageContainer } from "~/components";
 import { getCategories } from "~/models/bookCategory.server";
@@ -27,6 +27,7 @@ export default function Categories() {
           <Link
             key={slug}
             to={slug}
+            prefetch="intent"
             className="cursor-pointer rounded bg-primary-400 p-3"
           >
             <p className="text-lg font-medium">{name}</p>

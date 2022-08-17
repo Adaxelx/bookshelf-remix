@@ -1,10 +1,43 @@
-import type { ActionArgs } from "@remix-run/node";
+import type { Book } from "@prisma/client";
+import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, useActionData, useParams } from "@remix-run/react";
+import {
+  Form,
+  useActionData,
+  useLoaderData,
+  useParams,
+  useTransition,
+} from "@remix-run/react";
 import invariant from "tiny-invariant";
 import { Button, Input, PageContainer } from "~/components";
-import { createBook } from "~/models/book.server";
+import { createBook, getBookBySlug, updateBook } from "~/models/book.server";
+import { requireUser } from "~/session.server";
+import { formatDateToInput } from "~/utils";
+
+export async function loader({ request, params }: LoaderArgs) {
+  await requireUser(request);
+  invariant(params.bookGroupSlug, "Slug is required");
+  const url = new URL(request.url);
+  const slug = url.searchParams.get("slug");
+
+  let book: Pick<Book, "title" | "author" | "dateStart" | "dateEnd"> | null =
+    null;
+
+  if (slug) {
+    const bookRes = await getBookBySlug(slug);
+    invariant(bookRes, "No book for this slug");
+    const { title, author, dateStart, dateEnd } = bookRes;
+    book = {
+      title,
+      author,
+      dateEnd,
+      dateStart,
+    };
+  }
+
+  return json({ book });
+}
 
 export async function action({ request, params }: ActionArgs) {
   const formData = await request.formData();
@@ -12,7 +45,7 @@ export async function action({ request, params }: ActionArgs) {
   const author = formData.get("author");
   const dateStart = formData.get("dateStart");
   const dateEnd = formData.get("dateEnd");
-
+  const intent = formData.get("intent");
   invariant(params.categorySlug, "Category name must be defined.");
 
   if (typeof title !== "string" || title.length === 0) {
@@ -72,30 +105,56 @@ export async function action({ request, params }: ActionArgs) {
     );
   }
 
-  await createBook({
-    title,
-    dateEnd: new Date(dateEnd),
-    dateStart: new Date(dateStart),
-    slug: title
-      .toLowerCase()
-      .replace(/[^\w\s]/gi, "")
-      .split(" ")
-      .join("-"),
-    author,
-    categoryId: params.categorySlug,
-  });
+  const slug = title
+    .toLowerCase()
+    .replace(/[^\w\s]/gi, "")
+    .split(" ")
+    .join("-");
 
-  return redirect(`/book-group/${params.bookGroupSlug}/${params.categorySlug}`);
+  if (intent === "add") {
+    await createBook({
+      title,
+      dateEnd: new Date(dateEnd),
+      dateStart: new Date(dateStart),
+      slug,
+      author,
+      categoryId: params.categorySlug,
+    });
+  } else if (intent === "update") {
+    await updateBook({
+      title,
+      dateEnd: new Date(dateEnd),
+      dateStart: new Date(dateStart),
+      slug,
+      author,
+      categoryId: params.categorySlug,
+    });
+  }
+
+  return redirect(
+    `/book-group/${params.bookGroupSlug}/category/${params.categorySlug}`
+  );
 }
 
 const inputClassName = "";
 
 export default function BookForm() {
   const actionData = useActionData<typeof action>();
-  const { categoryName } = useParams();
+  const { book } = useLoaderData<typeof loader>();
+  const { categorySlug } = useParams();
+
+  const isEdit = Boolean(book);
+
+  const transition = useTransition();
+  const isUpdating =
+    transition?.submission?.formData.get("intent") === "update";
+  const isAdding = transition?.submission?.formData.get("intent") === "add";
+
   return (
     <PageContainer className="gap-4">
-      <h1>{`Dodaj nową ksiażkę dla kategorii ${categoryName}`}</h1>
+      <h1>{`${
+        isEdit ? "Edytuj książkę" : "Dodaj nową ksiażkę"
+      } dla kategorii ${categorySlug}`}</h1>
       <Form method="post" className="flex flex-col items-center gap-4">
         <div className="flex w-full flex-col gap-4 md:grid md:grid-cols-2 md:gap-4">
           <Input
@@ -104,7 +163,7 @@ export default function BookForm() {
             input={
               <input
                 // ref={emailRef}
-
+                defaultValue={book?.title}
                 id="title"
                 autoFocus={true}
                 name="title"
@@ -121,6 +180,7 @@ export default function BookForm() {
             input={
               <input
                 // ref={emailRef}
+                defaultValue={book?.author}
                 id="author"
                 autoFocus={true}
                 name="author"
@@ -137,6 +197,7 @@ export default function BookForm() {
             input={
               <input
                 // ref={emailRef}
+                defaultValue={formatDateToInput(book?.dateStart)}
                 id="dateStart"
                 autoFocus={true}
                 name="dateStart"
@@ -157,6 +218,7 @@ export default function BookForm() {
             input={
               <input
                 // ref={emailRef}
+                defaultValue={formatDateToInput(book?.dateEnd)}
                 id="dateEnd"
                 autoFocus={true}
                 name="dateEnd"
@@ -168,8 +230,15 @@ export default function BookForm() {
             error={actionData?.errors?.dateEnd}
           />
         </div>
-        <Button type="submit" className="w-full md:w-64">
-          Dodaj
+        <Button
+          type="submit"
+          className="w-full md:w-64"
+          name="intent"
+          disabled={isAdding || isUpdating}
+          value={isEdit ? "update" : "add"}
+        >
+          {isEdit ? (isUpdating ? "Updating..." : "Update") : null}
+          {isEdit ? null : isAdding ? "Creating..." : "Create"}
         </Button>
       </Form>
     </PageContainer>

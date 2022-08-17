@@ -12,7 +12,7 @@ export async function getUserBookGroups(id: User["id"]) {
   });
 }
 
-export async function getBookGroup({
+export async function getBookByCategoryIdGroup({
   userId,
   bookGroupId,
 }: {
