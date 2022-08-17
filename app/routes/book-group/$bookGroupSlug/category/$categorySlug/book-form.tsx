@@ -12,11 +12,11 @@ import {
 import invariant from "tiny-invariant";
 import { Button, Input, PageContainer } from "~/components";
 import { createBook, getBookBySlug, updateBook } from "~/models/book.server";
-import { requireUser } from "~/session.server";
+import { requireAdminUser } from "~/session.server";
 import { formatDateToInput } from "~/utils";
 
 export async function loader({ request, params }: LoaderArgs) {
-  await requireUser(request);
+  await requireAdminUser(request, params);
   invariant(params.bookGroupSlug, "Slug is required");
   const url = new URL(request.url);
   const slug = url.searchParams.get("slug");

@@ -12,6 +12,7 @@ import {
 import tailwindStylesheetUrl from "./styles/tailwind.css";
 import resetStylesheetUrl from "./styles/reset.css";
 import { getUser } from "./session.server";
+import { getBookGroupsForAdminUser } from "./models/bookGroup.server";
 
 export const links: LinksFunction = () => {
   return [
@@ -27,8 +28,16 @@ export const meta: MetaFunction = () => ({
 });
 
 export async function loader({ request }: LoaderArgs) {
+  const user = await getUser(request);
+  let adminUserGroups: string[] = [];
+  if (user) {
+    const resGroups = await getBookGroupsForAdminUser(user?.id);
+    adminUserGroups = resGroups.map(({ slug }) => slug);
+  }
+
   return json({
-    user: await getUser(request),
+    user,
+    adminUserGroups,
   });
 }
 

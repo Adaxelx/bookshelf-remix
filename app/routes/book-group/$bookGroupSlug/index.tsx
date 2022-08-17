@@ -24,9 +24,10 @@ import {
   getBookByCategoryIdGroup,
 } from "~/models/bookGroup.server";
 import { getImage } from "~/models/image.server";
-import { requireUser } from "~/session.server";
+import { requireAdminUser, requireUser } from "~/session.server";
 import backImage from "public/assets/Back.jpg";
 import { useState } from "react";
+import { useIsAdminUser } from "~/utils";
 
 export const links = () => [
   ...flipCardLinks(),
@@ -60,6 +61,7 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 export async function action({ request, params }: ActionArgs) {
+  await requireAdminUser(request, params);
   const formData = await request.formData();
   const slug = formData.get("randomCategory");
   const intent = formData.get("intent");
@@ -87,7 +89,7 @@ export default function BookGroup() {
   const { bookGroup, bookCategories, activeBookCategory } =
     useLoaderData<typeof loader>();
   const randomCategory = useActionData<typeof action>();
-
+  const isAdminUser = useIsAdminUser(bookGroup.slug);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   return (
     <PageContainer>
@@ -97,23 +99,28 @@ export default function BookGroup() {
           <Button to="category" variant="secondary" prefetch="intent">
             Lista kategorii
           </Button>
-          <Button to="category-form" variant="secondary" prefetch="intent">
-            Nowa kategoria
-          </Button>
-          <Button
-            to={`/book-group-form?slug=${bookGroup.slug}`}
-            prefetch="intent"
-            variant="secondary"
-          >
-            Edytuj grupę
-          </Button>
-          <Button
-            variant="secondary"
-            colorVariant="error"
-            onClick={() => setIsDeleteModalOpen(true)}
-          >
-            Remove group book
-          </Button>
+          {isAdminUser ? (
+            <>
+              <Button to="category-form" variant="secondary" prefetch="intent">
+                Nowa kategoria
+              </Button>
+
+              <Button
+                to={`/book-group-form?slug=${bookGroup.slug}`}
+                prefetch="intent"
+                variant="secondary"
+              >
+                Edytuj grupę
+              </Button>
+              <Button
+                variant="secondary"
+                colorVariant="error"
+                onClick={() => setIsDeleteModalOpen(true)}
+              >
+                Remove group book
+              </Button>
+            </>
+          ) : null}
           {activeBookCategory ? (
             <Button
               to={`category/${activeBookCategory.slug}`}
@@ -134,7 +141,7 @@ export default function BookGroup() {
           type="submit"
           name="randomCategory"
           className="w-full md:w-auto"
-          disabled={Boolean(activeBookCategory)}
+          disabled={Boolean(activeBookCategory) || !isAdminUser}
           value={
             bookCategories[Math.floor(Math.random() * bookCategories.length)]
           }

@@ -51,3 +51,12 @@ export async function deleteBookGroup(slug: BookGroup["slug"]) {
     where: { slug },
   });
 }
+
+export async function getBookGroupsForAdminUser(userId: User["id"]) {
+  return prisma.bookGroup.findMany({
+    where: { creatorId: userId },
+    select: {
+      slug: true,
+    },
+  });
+}

@@ -1,3 +1,4 @@
+import type { BookGroup } from "@prisma/client";
 import { useMatches } from "@remix-run/react";
 import dayjs from "dayjs";
 import { useMemo } from "react";
@@ -49,12 +50,24 @@ function isUser(user: any): user is User {
   return user && typeof user === "object" && typeof user.email === "string";
 }
 
+function isAdminGroups(groups: any): groups is string[] {
+  return groups && Array.isArray(groups);
+}
+
 export function useOptionalUser(): User | undefined {
   const data = useMatchesData("root");
   if (!data || !isUser(data.user)) {
     return undefined;
   }
   return data.user;
+}
+
+export function useAdminGroupsOfUser(): string[] | undefined {
+  const data = useMatchesData("root");
+  if (!data || !isAdminGroups(data.adminUserGroups)) {
+    return undefined;
+  }
+  return data.adminUserGroups;
 }
 
 export function useUser(): User {
@@ -65,6 +78,19 @@ export function useUser(): User {
     );
   }
   return maybeUser;
+}
+
+export function useIsAdminUser(
+  groupId: BookGroup["slug"] | undefined
+): Boolean {
+  const adminGroupsForUser = useAdminGroupsOfUser();
+  if (!adminGroupsForUser) {
+    throw new Error(
+      "No user or bookGroup found in root loader, but user is required by useIsAdminUser. If user is optional, try useOptionalUser instead."
+    );
+  }
+
+  return adminGroupsForUser.some((slug) => slug === groupId);
 }
 
 export function validateEmail(email: unknown): email is string {

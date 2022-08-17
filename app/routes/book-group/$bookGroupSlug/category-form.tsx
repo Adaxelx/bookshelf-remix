@@ -17,13 +17,13 @@ import {
   updateCategory,
 } from "~/models/bookCategory.server";
 import { getImages } from "~/models/image.server";
-import { requireUser } from "~/session.server";
+import { requireAdminUser } from "~/session.server";
 
 import { BsCheckLg } from "react-icons/bs";
 import type { BookCategory } from "@prisma/client";
 
 export async function loader({ request, params }: LoaderArgs) {
-  await requireUser(request);
+  await requireAdminUser(request, params);
   invariant(params.bookGroupSlug, "Slug is required");
   const url = new URL(request.url);
   const slug = url.searchParams.get("slug");
@@ -45,7 +45,7 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 export async function action({ request, params }: ActionArgs) {
-  await requireUser(request);
+  await requireAdminUser(request, params);
   const formData = await request.formData();
   const name = formData.get("name");
   const slug = formData.get("slug");
@@ -135,8 +135,6 @@ export default function CategoryForm() {
   const isUpdating =
     transition?.submission?.formData.get("intent") === "update";
   const isAdding = transition?.submission?.formData.get("intent") === "add";
-
-  console.log(pickedImageId);
 
   return (
     <PageContainer className="gap-4">

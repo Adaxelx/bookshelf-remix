@@ -22,11 +22,12 @@ import {
 import { deleteBook, getBookByCategoryId } from "~/models/book.server";
 import { deleteCategory, getCategory } from "~/models/bookCategory.server";
 import { getImage } from "~/models/image.server";
-import { requireUser } from "~/session.server";
+import { requireAdminUser, requireUser } from "~/session.server";
 import dayjs from "dayjs";
 import { addOpinion, getOpinions } from "~/models/opinion.server";
 import { useEffect, useState } from "react";
 import type { Nullable } from "~/utils";
+import { useIsAdminUser } from "~/utils";
 
 export const links = () => [...deleteModalLinks()];
 
@@ -70,7 +71,7 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 export async function action({ request, params }: ActionArgs) {
-  const user = await requireUser(request);
+  const user = await requireAdminUser(request, params);
   const formData = await request.formData();
   const formDataRate = formData.get("rate");
   const description = formData.get("description");
@@ -151,12 +152,15 @@ export default function CategoryPage() {
   const { bookCategory, image, book, opinions } =
     useLoaderData<typeof loader>();
 
+  const { bookGroupSlug, categorySlug } = useParams();
+
+  const isAdminUser = useIsAdminUser(bookGroupSlug);
+
   const actionData = useActionData<typeof action>();
   const { name } = bookCategory;
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] =
     useState<DeleteModalTypes>(null);
-  const { bookGroupSlug, categorySlug } = useParams();
 
   const isBookPresent = book;
   const wasBookActiveOrPicked = bookCategory.isActive || bookCategory.wasPicked;
@@ -187,21 +191,24 @@ export default function CategoryPage() {
           </div>
         ) : null}
       </header>
-      <section className="flex gap-2">
-        <Button
-          variant="secondary"
-          prefetch="intent"
-          to={`/book-group/${bookGroupSlug}/category-form?slug=${categorySlug}`}
-        >
-          Edit
-        </Button>
-        <Button
-          colorVariant="error"
-          onClick={() => setIsDeleteModalOpen("category")}
-        >
-          Delete
-        </Button>
-      </section>
+      {isAdminUser ? (
+        <section className="flex gap-2">
+          <Button
+            variant="secondary"
+            prefetch="intent"
+            to={`/book-group/${bookGroupSlug}/category-form?slug=${categorySlug}`}
+          >
+            Edit
+          </Button>
+          <Button
+            colorVariant="error"
+            onClick={() => setIsDeleteModalOpen("category")}
+          >
+            Delete
+          </Button>
+        </section>
+      ) : null}
+
       <main className="flex max-h-[40rem] flex-col gap-4 md:flex-row">
         <div className="max-h-[40rem] max-w-sm self-center">
           <Card src={image} alt={`Card for category ${bookCategory.name}`} />
@@ -209,7 +216,7 @@ export default function CategoryPage() {
         <section className="flex grow flex-col gap-4 rounded bg-primary-300 p-3">
           <div className="flex flex-col gap-1 md:flex-row md:gap-4">
             <h2 className="text-primary-700">Choosen book</h2>
-            {isBookPresent ? (
+            {isBookPresent && isAdminUser ? (
               <>
                 <Button
                   variant="secondary"
@@ -325,13 +332,18 @@ export default function CategoryPage() {
               </section>
             </article>
           ) : null}
-          {shouldShowAddBookButton ? (
+          {shouldShowAddBookButton && isAdminUser ? (
             <Button variant="secondary" to="book-form" prefetch="intent">
               Add book
             </Button>
           ) : null}
           {shouldShowNoActiveCategoryAlert ? (
             <Alert variant="info">Category must be active to add book.</Alert>
+          ) : null}
+          {shouldShowAddBookButton && !isAdminUser ? (
+            <Alert variant="info">
+              Admin user didn't add book yet. Stay tuned!
+            </Alert>
           ) : null}
         </section>
       </main>
