@@ -1,15 +1,21 @@
 import type { HTMLAttributes, ReactNode } from "react";
 
+const alertVariants = {
+  success: `rounded border border-green-900/10 bg-green-50 p-4 text-green-700`,
+  info: `rounded border border-sky-900/10 bg-sky-50 p-4 text-sky-700`,
+  error: `rounded border border-red-900/10 bg-red-50 p-4 text-red-700`,
+  warning: `rounded border border-amber-900/10 bg-amber-50 p-4 text-amber-700`,
+};
+
 export default function Alert({
   variant = "success",
   children,
   className = "",
   ...rest
 }: AlertProps & HTMLAttributes<HTMLDivElement>) {
-  const color = mapVariantToColor(variant);
   return (
     <div
-      className={`rounded border border-${color}-900/10 bg-${color}-50 p-4 text-${color}-700 ${className}`}
+      className={`${alertVariants[variant]} ${className}`}
       role="alert"
       {...rest}
     >
@@ -24,16 +30,3 @@ interface AlertProps {
 }
 
 type AlertVariant = "success" | "info" | "warning" | "error";
-
-const mapVariantToColor = (variant: AlertVariant) => {
-  switch (variant) {
-    case "success":
-      return "green";
-    case "info":
-      return "sky";
-    case "warning":
-      return "amber";
-    case "error":
-      return "red";
-  }
-};
