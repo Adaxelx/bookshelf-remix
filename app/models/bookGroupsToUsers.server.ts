@@ -31,3 +31,28 @@ export async function addUserToBookGroup({
     },
   });
 }
+
+export async function getUsersForBookGroup(slug: BookGroup["slug"]) {
+  return prisma.bookGroupsToUsers.findMany({
+    where: { bookGroupId: slug },
+    include: {
+      user: { select: { email: true } },
+      bookGroup: { select: { creatorId: true } },
+    },
+  });
+}
+
+export async function removeUserFromGroup({
+  slug,
+  userId,
+}: {
+  slug: BookGroup["slug"];
+  userId: User["id"];
+}) {
+  return prisma.bookGroupsToUsers.deleteMany({
+    where: {
+      userId: userId,
+      bookGroupId: slug,
+    },
+  });
+}

@@ -37,7 +37,7 @@ export async function action({ request, params }: ActionArgs) {
       { status: 400 }
     );
   }
-  return redirect(`/book-group/${params.bookGroupSlug}/users`);
+  return redirect(`/book-group/${params.bookGroupSlug}/user-list`);
 }
 
 const inputClassName = "";
@@ -52,7 +52,7 @@ export default function UserForm() {
     <PageContainer className="gap-4">
       <h1>{"Add user form"}</h1>
       <Form method="post" className="flex flex-col items-center gap-4">
-        <div className="flex w-full flex-col gap-4 md:grid md:grid-cols-2 md:gap-4">
+        <div className="flex w-full flex-col gap-4">
           <Input
             className={inputClassName}
             label={<label htmlFor="name">User email:</label>}

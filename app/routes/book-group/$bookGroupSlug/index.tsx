@@ -99,6 +99,9 @@ export default function BookGroup() {
           <Button to="category" variant="secondary" prefetch="intent">
             Lista kategorii
           </Button>
+          <Button to="user-list" variant="secondary" prefetch="intent">
+            Lista użytkowników
+          </Button>
           {isAdminUser ? (
             <>
               <Button to="category-form" variant="secondary" prefetch="intent">
