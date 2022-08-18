@@ -88,44 +88,6 @@ describe("smoke tests", () => {
       );
     });
 
-    it("should add user to group", () => {
-      const userNotAdminKey = "userNotAdmin";
-
-      cy.createRandomBookGroup();
-      cy.createUserAccount({ key: userNotAdminKey });
-      cy.visitAndCheck("/book-group");
-      cy.get("@bookGroupData").then((bookGroup) =>
-        cy
-          .findByText(`${(bookGroup as unknown as { name: string }).name}`)
-          .click()
-      );
-
-      cy.get('[data-test="button:addUser"]').click();
-
-      cy.get(`@${userNotAdminKey}`).then((user) =>
-        cy
-          .get("#email")
-          .type(`${(user as unknown as { email?: string }).email}`)
-      );
-
-      cy.get('[data-test="button:submitUser"]').click();
-
-      cy.get(`@${userNotAdminKey}`).then((user) => {
-        cy.get("@bookGroupData").then((bookGroup) =>
-          cy
-            .url()
-            .should(
-              "eq",
-              `${Cypress.config().baseUrl}/book-group/${
-                (bookGroup as unknown as { slug?: string }).slug
-              }/user-list`
-            )
-        );
-        cy.findByText(`${(user as unknown as { email?: string }).email}`);
-        cy.cleanupUser({ key: userNotAdminKey });
-      });
-    });
-
     const notAllowedForNoAdminUser = [
       "newCategory",
       "addUser",
@@ -167,6 +129,73 @@ describe("smoke tests", () => {
       notAllowedForNoAdminUser.forEach((buttonName) =>
         cy.get(`[data-test="button:${buttonName}"]`).should("not.exist")
       );
+
+      cy.cleanupUser({ key: userNotAdminKey });
+    });
+
+    it("should add user to group", () => {
+      const userNotAdminKey = "userNotAdmin";
+
+      cy.createRandomBookGroup();
+      cy.createUserAccount({ key: userNotAdminKey });
+      cy.visitAndCheck("/book-group");
+      cy.get("@bookGroupData").then((bookGroup) =>
+        cy
+          .findByText(`${(bookGroup as unknown as { name: string }).name}`)
+          .click()
+      );
+
+      cy.get('[data-test="button:addUser"]').click();
+
+      cy.get(`@${userNotAdminKey}`).then((user) =>
+        cy
+          .get("#email")
+          .type(`${(user as unknown as { email?: string }).email}`)
+      );
+
+      cy.get('[data-test="button:submitUser"]').click();
+
+      cy.get(`@${userNotAdminKey}`).then((user) => {
+        cy.get("@bookGroupData").then((bookGroup) =>
+          cy
+            .url()
+            .should(
+              "eq",
+              `${Cypress.config().baseUrl}/book-group/${
+                (bookGroup as unknown as { slug?: string }).slug
+              }/user-list`
+            )
+        );
+        cy.findByText(`${(user as unknown as { email?: string }).email}`);
+        cy.cleanupUser({ key: userNotAdminKey });
+      });
+    });
+
+    it(`should remove user from group`, () => {
+      const userNotAdminKey = "userNotAdmin";
+
+      cy.createRandomBookGroup();
+
+      cy.get("@bookGroupData").then((bookGroup) =>
+        cy.createUserAndAddToGroup({
+          key: userNotAdminKey,
+          bookGroupId: (bookGroup as unknown as { slug: string }).slug,
+        })
+      );
+
+      cy.visitAndCheck("/book-group");
+
+      cy.get("@bookGroupData").then((bookGroup) =>
+        cy
+          .findByText(`${(bookGroup as unknown as { name: string }).name}`)
+          .click()
+      );
+
+      cy.get('[data-test="button:userList"]').click();
+
+      cy.get('[data-test="button:removeUser"]').click();
+
+      cy.get('[data-test="button:deleteConfirmation"]').click();
 
       cy.cleanupUser({ key: userNotAdminKey });
     });
