@@ -99,27 +99,44 @@ export default function BookGroup() {
           <Button to="category" variant="secondary" prefetch="intent">
             Lista kategorii
           </Button>
-          <Button to="user-list" variant="secondary" prefetch="intent">
+          <Button
+            to="user-list"
+            variant="secondary"
+            prefetch="intent"
+            data-test="button:userList"
+          >
             Lista użytkowników
           </Button>
           {isAdminUser ? (
             <>
-              <Button to="category-form" variant="secondary" prefetch="intent">
+              <Button
+                to="category-form"
+                variant="secondary"
+                prefetch="intent"
+                data-test="button:newCategory"
+              >
                 Nowa kategoria
               </Button>
-              <Button to="add-user" variant="secondary" prefetch="intent">
+              <Button
+                to="add-user"
+                variant="secondary"
+                prefetch="intent"
+                data-test="button:addUser"
+              >
                 Dodaj użytkownika
               </Button>
               <Button
                 to={`/book-group-form?slug=${bookGroup.slug}`}
                 prefetch="intent"
                 variant="secondary"
+                data-test="button:editGroup"
               >
                 Edytuj grupę
               </Button>
               <Button
                 variant="secondary"
                 colorVariant="error"
+                data-test="button:removeBookGroup"
                 onClick={() => setIsDeleteModalOpen(true)}
               >
                 Remove group book
@@ -184,6 +201,7 @@ export default function BookGroup() {
               type="submit"
               name="intent"
               value="delete"
+              data-test="button:deleteConfirmation"
             >
               Delete
             </Button>

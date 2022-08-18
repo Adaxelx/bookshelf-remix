@@ -6,10 +6,11 @@
 
 import { installGlobals } from "@remix-run/node";
 import { createUser } from "~/models/user.server";
-
+import { addUserToBookGroup } from "~/models/bookGroupsToUsers.server";
 installGlobals();
 
-async function createUserAccount(email: string) {
+async function createUserAndAddToGroup(email: string, bookGroupId: string) {
+  console.log(email, bookGroupId);
   if (!email) {
     throw new Error("email required for login");
   }
@@ -23,6 +24,8 @@ async function createUserAccount(email: string) {
     name: "Random name",
   });
 
+  await addUserToBookGroup({ email, slug: bookGroupId });
+
   console.log(
     `
 <userId>
@@ -32,4 +35,4 @@ async function createUserAccount(email: string) {
   );
 }
 
-createUserAccount(process.argv[2]);
+createUserAndAddToGroup(process.argv[2], process.argv[3]);

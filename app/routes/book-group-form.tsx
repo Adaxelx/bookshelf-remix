@@ -16,14 +16,14 @@ import {
   editBookGroup,
   getBookByCategoryIdGroup,
 } from "~/models/bookGroup.server";
-import { requireUserId } from "~/session.server";
+import { requireAdminUser, requireUser, requireUserId } from "~/session.server";
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await requireUserId(request);
   const url = new URL(request.url);
   const slug = url.searchParams.get("slug");
 
-  if (!slug) return json({ bookGroup: null });
+  if (!slug) return json({ bookGroup: null, prevSlug: "" });
 
   const bookGroup = await getBookByCategoryIdGroup({
     userId,
@@ -32,15 +32,39 @@ export async function loader({ request }: LoaderArgs) {
 
   invariant(bookGroup, `Can not find book group with slug ${slug}`);
 
-  return json({ bookGroup: { name: bookGroup.name, slug: bookGroup.slug } });
+  return json({
+    bookGroup: { name: bookGroup.name, slug: bookGroup.slug },
+    prevSlug: slug,
+  });
 }
 
-export async function action({ request }: ActionArgs) {
-  const userId = await requireUserId(request);
+const isPrevSlugDefined = (
+  prevSlug: FormDataEntryValue | null,
+  intent: FormDataEntryValue | null
+): prevSlug is string => {
+  return (
+    (typeof prevSlug === "string" && prevSlug.length !== 0) || intent === "add"
+  );
+};
+
+export async function action({ request, params }: ActionArgs) {
   const formData = await request.formData();
+  const intent = formData.get("intent");
+  const isAddForm = intent === "add";
+
+  const prevSlug = formData.get("prevSlug");
+  if (!isPrevSlugDefined(prevSlug, intent)) {
+    throw new Response(`Previous slug is missing!`, {
+      status: 404,
+    });
+  }
+
+  const user = isAddForm
+    ? await requireUser(request)
+    : await requireAdminUser(request, params, prevSlug);
+
   const name = formData.get("name");
   const slug = formData.get("slug");
-  const intent = formData.get("intent");
 
   if (typeof name !== "string" || name.length === 0) {
     return json(
@@ -67,9 +91,9 @@ export async function action({ request }: ActionArgs) {
   }
 
   const bookGroup =
-    intent === "add"
-      ? await createBookGroup({ name, slug, creatorId: userId })
-      : await editBookGroup({ name, slug });
+    intent === "update"
+      ? await editBookGroup({ name, slug, prevSlug })
+      : await createBookGroup({ name, slug, creatorId: user.id });
 
   return redirect(`/book-group/${bookGroup.slug}`);
 }
@@ -84,11 +108,13 @@ export default function BookGroupForm() {
   const transition = useTransition();
   const isUpdating = transition.submission?.formData.get("intent") === "update";
   const isAdding = transition.submission?.formData.get("intent") === "add";
+
   return (
     <PageContainer className="gap-4">
       <h1>{`${isEditForm ? "Edit" : "Add new"} book group`}</h1>
       <Form method="post" className="flex flex-col items-center gap-4">
         <div className="flex w-full flex-col gap-4 md:grid md:grid-cols-2 md:gap-4">
+          <input hidden={true} name="prevSlug" value={loaderData.prevSlug} />
           <Input
             className={inputClassName}
             label={<label htmlFor="name">Group name</label>}
@@ -130,6 +156,7 @@ export default function BookGroupForm() {
           value={isEditForm ? "update" : "add"}
           className="w-full md:w-64"
           disabled={isUpdating || isAdding}
+          data-test="button:submitBookForm"
         >
           {isEditForm ? (isUpdating ? "Updating..." : "Update") : null}
           {isEditForm ? null : isAdding ? "Creating..." : "Create"}

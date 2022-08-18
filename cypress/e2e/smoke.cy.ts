@@ -27,6 +27,14 @@ describe("smoke tests", () => {
 
       cy.findByText("Book groups");
     });
+
+    it("should allow you to register and login and logout", () => {
+      cy.login();
+      cy.logout();
+
+      cy.findByText("Sign up");
+      cy.findByText("Log In");
+    });
   });
 
   describe("book groups", () => {
@@ -54,6 +62,145 @@ describe("smoke tests", () => {
 
       cy.get("h1").should("have.text", testBookGroup.name);
       cy.url().should("include", `book-group/${testBookGroup.slug}`);
+    });
+
+    it("should remove book group", () => {
+      cy.createRandomBookGroup();
+
+      cy.visitAndCheck("/book-group");
+
+      cy.get("@bookGroupData").then((bookGroup) =>
+        cy
+          .findByText(`${(bookGroup as unknown as { name: string }).name}`)
+          .click()
+      );
+
+      cy.get('[data-test="button:removeBookGroup"]').click();
+
+      cy.get('[data-test="button:deleteConfirmation"]').click();
+
+      cy.url().should("eq", `${Cypress.config().baseUrl}/book-group`);
+
+      cy.get("@bookGroupData").then((bookGroup) =>
+        cy
+          .findByText(`${(bookGroup as unknown as { name: string }).name}`)
+          .should("not.exist")
+      );
+    });
+
+    it("should add user to group", () => {
+      const userNotAdminKey = "userNotAdmin";
+
+      cy.createRandomBookGroup();
+      cy.createUserAccount({ key: userNotAdminKey });
+      cy.visitAndCheck("/book-group");
+      cy.get("@bookGroupData").then((bookGroup) =>
+        cy
+          .findByText(`${(bookGroup as unknown as { name: string }).name}`)
+          .click()
+      );
+
+      cy.get('[data-test="button:addUser"]').click();
+
+      cy.get(`@${userNotAdminKey}`).then((user) =>
+        cy
+          .get("#email")
+          .type(`${(user as unknown as { email?: string }).email}`)
+      );
+
+      cy.get('[data-test="button:submitUser"]').click();
+
+      cy.get(`@${userNotAdminKey}`).then((user) => {
+        cy.get("@bookGroupData").then((bookGroup) =>
+          cy
+            .url()
+            .should(
+              "eq",
+              `${Cypress.config().baseUrl}/book-group/${
+                (bookGroup as unknown as { slug?: string }).slug
+              }/user-list`
+            )
+        );
+        cy.findByText(`${(user as unknown as { email?: string }).email}`);
+        cy.cleanupUser({ key: userNotAdminKey });
+      });
+    });
+
+    const notAllowedForNoAdminUser = [
+      "newCategory",
+      "addUser",
+      "editGroup",
+      "removeBookGroup",
+    ];
+
+    it(`should not show ${notAllowedForNoAdminUser.join(
+      ", "
+    )} options for not admin user`, () => {
+      const userNotAdminKey = "userNotAdmin";
+
+      cy.createRandomBookGroup();
+
+      cy.logout();
+
+      cy.get("@bookGroupData").then((bookGroup) =>
+        cy.createUserAndAddToGroup({
+          key: userNotAdminKey,
+          bookGroupId: (bookGroup as unknown as { slug: string }).slug,
+        })
+      );
+
+      cy.get(`@${userNotAdminKey}`).then((user) =>
+        cy.login({
+          email: (user as unknown as { email?: string }).email,
+          shouldCreateUser: 0,
+        })
+      );
+
+      cy.visitAndCheck("/book-group");
+
+      cy.get("@bookGroupData").then((bookGroup) =>
+        cy
+          .findByText(`${(bookGroup as unknown as { name: string }).name}`)
+          .click()
+      );
+
+      notAllowedForNoAdminUser.forEach((buttonName) =>
+        cy.get(`[data-test="button:${buttonName}"]`).should("not.exist")
+      );
+
+      cy.cleanupUser({ key: userNotAdminKey });
+    });
+
+    it("should edit book group", () => {
+      const testEditBookGroup = {
+        name: faker.lorem.words(1),
+        slug: faker.lorem.words(1),
+      };
+      cy.createRandomBookGroup();
+
+      cy.visitAndCheck("/book-group");
+
+      cy.get("@bookGroupData").then((bookGroup) =>
+        cy
+          .findByText(`${(bookGroup as unknown as { name: string }).name}`)
+          .click()
+      );
+
+      cy.get('[data-test="button:editGroup"]').click();
+
+      cy.findByText("Edit", { exact: false });
+
+      cy.get("#name").clear().type(testEditBookGroup.name);
+      cy.get("#slug").clear().type(testEditBookGroup.slug);
+
+      cy.get('[data-test="button:submitBookForm"]').click();
+
+      cy.then(() => ({ ...testEditBookGroup })).as("bookGroupData");
+
+      cy.url().should(
+        "eq",
+        `${Cypress.config().baseUrl}/book-group/${testEditBookGroup.slug}`
+      );
     });
   });
 

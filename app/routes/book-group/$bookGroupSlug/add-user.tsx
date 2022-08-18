@@ -75,6 +75,7 @@ export default function UserForm() {
           name="intent"
           value={"add"}
           disabled={isAdding}
+          data-test="button:submitUser"
         >
           {isAdding ? "Adding..." : "Add"}
         </Button>

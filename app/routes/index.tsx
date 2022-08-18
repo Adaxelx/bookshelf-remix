@@ -22,7 +22,9 @@ export default function Index() {
             View Bookgroups for {user.email}
           </Link>
           <Form method="post">
-            <Button type="submit">Logout</Button>
+            <Button type="submit" data-test="button:logout">
+              Logout
+            </Button>
           </Form>
         </>
       ) : (

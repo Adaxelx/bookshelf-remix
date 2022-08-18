@@ -16,6 +16,37 @@ declare global {
       login: typeof login;
 
       /**
+       * Creates user account
+       *
+       * @returns {typeof createUserAccount}
+       * @memberof Chainable
+       * @example
+       *    cy.login()
+       * @example
+       *    cy.login({ email: 'whatever@example.com' })
+       */
+      createUserAccount: typeof createUserAccount;
+
+      /**
+       * Creates user and add it to group
+       *
+       * @returns {typeof createUserAndAddToGroup}
+       * @example
+       *    cy.createUserAndAddToGroup({ email: 'whatever@example.com',bookGroupId: '123' })
+       */
+      createUserAndAddToGroup: typeof createUserAndAddToGroup;
+
+      /**
+       * Logout current user
+       *
+       * @returns {typeof logout}
+       * @example
+       *    cy.logout()
+       * */
+
+      logout: typeof logout;
+
+      /**
        * Deletes the current @user
        *
        * @returns {typeof cleanupUser}
@@ -77,12 +108,16 @@ declare global {
 
 function login({
   email = faker.internet.email(undefined, undefined, "example.com"),
+  key = "user",
+  shouldCreateUser = 1, // true
 }: {
   email?: string;
+  key?: string;
+  shouldCreateUser?: number;
 } = {}) {
-  cy.then(() => ({ email })).as("user");
+  cy.then(() => ({ email })).as(key);
   cy.exec(
-    `npx ts-node --require tsconfig-paths/register ./cypress/support/create-user.ts "${email}"`
+    `npx ts-node --require tsconfig-paths/register ./cypress/support/create-user-and-login.ts "${email}" "${shouldCreateUser}"`
   ).then(({ stdout }) => {
     const cookieValue = stdout
       .replace(/.*<cookie>(?<cookieValue>.*)<\/cookie>.*/s, "$<cookieValue>")
@@ -92,17 +127,45 @@ function login({
       .replace(/.*<userId>(?<cookieValue>.*)<\/userId>.*/s, "$<cookieValue>")
       .trim();
 
-    cy.then(() => ({ userId })).as("userId");
+    cy.then(() => ({ userId })).as(`${key}Id`);
     cy.setCookie("__session", cookieValue);
   });
-  return cy.get("@user");
+  return cy.get(`@${key}`);
 }
 
-function cleanupUser({ email }: { email?: string } = {}) {
+function createUserAccount({
+  email = faker.internet.email(undefined, undefined, "example.com"),
+  key = "user",
+}: {
+  email?: string;
+  key?: string;
+} = {}) {
+  cy.then(() => ({ email })).as(key);
+  cy.exec(
+    `npx ts-node --require tsconfig-paths/register ./cypress/support/create-user.ts "${email}"`
+  ).then(({ stdout }) => {
+    const userId = stdout
+      .replace(/.*<userId>(?<cookieValue>.*)<\/userId>.*/s, "$<cookieValue>")
+      .trim();
+
+    cy.then(() => ({ userId })).as(`${key}Id`);
+  });
+  return cy.get(`@${key}`);
+}
+
+function logout() {
+  cy.visitAndCheck("/");
+  cy.findByText("Logout").click();
+}
+
+function cleanupUser({
+  email,
+  key = "user",
+}: { email?: string; key?: string } = {}) {
   if (email) {
     deleteUserByEmail(email);
   } else {
-    cy.get("@user").then((user) => {
+    cy.get(`@${key}`).then((user) => {
       const email = (user as { email?: string }).email;
       if (email) {
         deleteUserByEmail(email);
@@ -110,6 +173,21 @@ function cleanupUser({ email }: { email?: string } = {}) {
     });
   }
   cy.clearCookie("__session");
+}
+
+function createUserAndAddToGroup({
+  key = "userNotAdmin",
+  email = faker.internet.email(undefined, undefined, "example.com"),
+  bookGroupId,
+}: {
+  key?: string;
+  email?: string;
+  bookGroupId: string;
+}) {
+  cy.then(() => ({ email })).as(key);
+  cy.exec(
+    `npx ts-node --require tsconfig-paths/register ./cypress/support/create-user-and-add-to-group.ts "${email}" "${bookGroupId}"`
+  );
 }
 
 function createRandomBookGroup() {
@@ -204,6 +282,9 @@ Cypress.Commands.add("visitAndCheck", visitAndCheck);
 Cypress.Commands.add("createRandomBookGroup", createRandomBookGroup);
 Cypress.Commands.add("cleanupBookGroup", cleanupBookGroup);
 Cypress.Commands.add("cleanupBookCategory", cleanupBookCategory);
+Cypress.Commands.add("logout", logout);
+Cypress.Commands.add("createUserAccount", createUserAccount);
+Cypress.Commands.add("createUserAndAddToGroup", createUserAndAddToGroup);
 /*
 eslint
   @typescript-eslint/no-namespace: "off",
