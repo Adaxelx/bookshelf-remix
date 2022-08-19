@@ -95,7 +95,7 @@ export default function BookGroup() {
     <PageContainer>
       <div className="flex shrink grow basis-0 flex-col gap-4">
         <h1>{bookGroup.name}</h1>
-        <section className="mb-3 flex flex-col gap-2 md:flex-row">
+        <section className="p mb-3 flex flex-col gap-2 md:grid md:grid-cols-4">
           <Button to="category" variant="secondary" prefetch="intent">
             Lista kategorii
           </Button>
@@ -132,6 +132,22 @@ export default function BookGroup() {
                 data-test="button:editGroup"
               >
                 Edytuj grupę
+              </Button>
+              <Button
+                to="image-form"
+                variant="secondary"
+                prefetch="intent"
+                data-test="button:imageForm"
+              >
+                Dodaj obrazek
+              </Button>
+              <Button
+                to="image-list"
+                variant="secondary"
+                prefetch="intent"
+                data-test="button:imageList"
+              >
+                Image list
               </Button>
               <Button
                 variant="secondary"

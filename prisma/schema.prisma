@@ -45,8 +45,8 @@ model BookCategory{
   isActive  Boolean @default(false)
   wasPicked Boolean @default(false)
   book      Book?
-  image     Image  @relation(fields: [imageId], references: [id])
-  imageId   String 
+  image     Image  @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  imageId   String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

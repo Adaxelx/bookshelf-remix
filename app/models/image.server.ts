@@ -15,3 +15,17 @@ export async function getImages(bookGroupId: BookGroup["slug"]) {
     where: { OR: [{ bookGroupId: null }, { bookGroupId }] },
   });
 }
+
+export async function createImage(imageData: Omit<Image, "id">) {
+  return prisma.image.create({
+    data: imageData,
+  });
+}
+
+export async function deleteImage(imageId: Image["id"]) {
+  return prisma.image.delete({
+    where: {
+      id: imageId,
+    },
+  });
+}

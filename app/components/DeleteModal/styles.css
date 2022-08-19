@@ -4,3 +4,7 @@
   flex-direction: column;
   gap: 0.5rem;
 }
+
+[data-reach-dialog-overlay] {
+  z-index: 99;
+}

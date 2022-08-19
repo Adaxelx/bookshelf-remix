@@ -1,5 +1,7 @@
 import type { HTMLAttributes } from "react";
 
+const base64Prefix = "data:image";
+
 export default function Card({
   src,
   alt,
@@ -13,7 +15,11 @@ export default function Card({
       className={`relative h-full w-full overflow-hidden rounded-xl bg-primary-600 ${className}`}
     >
       <img
-        src={isBase ? `data:image/jpg;base64,${src}` : src}
+        src={
+          isBase && !src.includes(base64Prefix)
+            ? `data:image/jpg;base64,${src}`
+            : src
+        }
         alt={alt}
         className="h-full w-full"
       />
