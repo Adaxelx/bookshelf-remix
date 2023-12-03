@@ -1,6 +1,6 @@
 // Use this to create a new book group
 // Simply call this with:
-// npx ts-node --require tsconfig-paths/register ./cypress/support/create-book-group.ts "userId" "group name" "slug"
+// npx ts-node --require tsconfig-paths/register ./cypress/support/create-book-group.ts "userId" "group name" "id"
 
 import { installGlobals } from "@remix-run/node";
 
@@ -8,7 +8,7 @@ import { createBookGroup } from "~/models/bookGroup.server";
 
 installGlobals();
 
-async function createGroup(userId: string, name: string, slug: string) {
+async function createGroup(userId: string, name: string, id: string) {
   if (!userId) {
     throw new Error("user id is required for creating a book group");
   }
@@ -16,11 +16,11 @@ async function createGroup(userId: string, name: string, slug: string) {
     throw new Error("name is required");
   }
 
-  if (!slug) {
-    throw new Error("slug is required");
+  if (!id) {
+    throw new Error("id is required");
   }
   try {
-    await createBookGroup({ name, slug, creatorId: userId });
+    await createBookGroup({ name, id, creatorId: userId });
   } catch (err) {
     console.log(err);
   }

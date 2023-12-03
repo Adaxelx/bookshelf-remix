@@ -66,7 +66,7 @@ declare global {
        * @example
        *    cy.cleanupBookGroup()
        * @example
-       *    cy.cleanupBookGroup({ slug: '123' })
+       *    cy.cleanupBookGroup({ id: '123' })
        */
       cleanupBookGroup: typeof cleanupBookGroup;
 
@@ -78,7 +78,7 @@ declare global {
        * @example
        *    cy.cleanupBookCategory()
        * @example
-       *    cy.cleanupBookCategory({ slug: '123' })
+       *    cy.cleanupBookCategory({ id: '123' })
        */
       cleanupBookCategory: typeof cleanupBookCategory;
 
@@ -195,7 +195,7 @@ function createRandomBookGroup() {
 
   const testBookGroup = {
     name: faker.lorem.words(1),
-    slug: faker.lorem.words(1),
+    id: faker.lorem.words(1),
   };
 
   cy.get("@userId").then((data) => {
@@ -209,15 +209,15 @@ function createRandomBookGroup() {
 function createBookGroup({
   userId,
   name,
-  slug,
+  id,
 }: {
   userId: string;
   name: string;
-  slug: string;
+  id: string;
 }) {
-  cy.then(() => ({ name, slug })).as("bookGroupData");
+  cy.then(() => ({ name, id })).as("bookGroupData");
   cy.exec(
-    `npx ts-node --require tsconfig-paths/register ./cypress/support/create-book-group.ts "${userId}" "${name}" "${slug}"`
+    `npx ts-node --require tsconfig-paths/register ./cypress/support/create-book-group.ts "${userId}" "${name}" "${id}"`
   );
 }
 
@@ -228,41 +228,41 @@ function deleteUserByEmail(email: string) {
   cy.clearCookie("__session");
 }
 
-function cleanupBookGroup({ slug }: { slug?: string } = {}) {
-  if (slug) {
-    deleteBookGroupBySlug(slug);
+function cleanupBookGroup({ id }: { id?: string } = {}) {
+  if (id) {
+    deleteBookGroupById(id);
   } else {
     cy.get("@bookGroupData").then((bookGroup) => {
-      const slug = (bookGroup as { name?: string; slug?: string }).slug;
-      if (slug) {
-        deleteBookGroupBySlug(slug);
+      const id = (bookGroup as { name?: string; id?: string }).id;
+      if (id) {
+        deleteBookGroupById(id);
       }
     });
   }
 }
 
-function deleteBookGroupBySlug(slug: string) {
+function deleteBookGroupById(id: string) {
   cy.exec(
-    `npx ts-node --require tsconfig-paths/register ./cypress/support/delete-book-group.ts "${slug}"`
+    `npx ts-node --require tsconfig-paths/register ./cypress/support/delete-book-group.ts "${id}"`
   );
 }
 
-function cleanupBookCategory({ slug }: { slug?: string } = {}) {
-  if (slug) {
-    deleteBookCategoryBySlug(slug);
+function cleanupBookCategory({ id }: { id?: string } = {}) {
+  if (id) {
+    deleteBookCategoryById(id);
   } else {
     cy.get("@bookCategoryData").then((bookGroup) => {
-      const slug = (bookGroup as { name?: string; slug?: string }).slug;
-      if (slug) {
-        deleteBookCategoryBySlug(slug);
+      const id = (bookGroup as { name?: string; id?: string }).id;
+      if (id) {
+        deleteBookCategoryById(id);
       }
     });
   }
 }
 
-function deleteBookCategoryBySlug(slug: string) {
+function deleteBookCategoryById(id: string) {
   cy.exec(
-    `npx ts-node --require tsconfig-paths/register ./cypress/support/delete-book-category.ts "${slug}"`
+    `npx ts-node --require tsconfig-paths/register ./cypress/support/delete-book-category.ts "${id}"`
   );
 }
 

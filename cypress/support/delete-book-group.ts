@@ -7,14 +7,14 @@ import { prisma } from "~/db.server";
 
 installGlobals();
 
-async function deleteBookGroups(slug: string) {
+async function deleteBookGroups(id: string) {
   try {
     await prisma.bookGroupsToUsers.deleteMany({
       where: {
-        bookGroup: { slug },
+        bookGroup: { id },
       },
     });
-    await prisma.bookGroup.delete({ where: { slug } });
+    await prisma.bookGroup.delete({ where: { id } });
   } catch (err) {
     console.log(err);
   }

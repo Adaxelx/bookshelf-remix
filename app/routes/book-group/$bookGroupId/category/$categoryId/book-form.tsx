@@ -11,22 +11,22 @@ import {
 } from "@remix-run/react";
 import invariant from "tiny-invariant";
 import { Button, Input, PageContainer } from "~/components";
-import { createBook, getBookBySlug, updateBook } from "~/models/book.server";
+import { createBook, getBookById, updateBook } from "~/models/book.server";
 import { requireAdminUser } from "~/session.server";
 import { formatDateToInput } from "~/utils";
 
 export async function loader({ request, params }: LoaderArgs) {
   await requireAdminUser(request, params);
-  invariant(params.bookGroupSlug, "Slug is required");
+  invariant(params.bookGroupId, "Id is required");
   const url = new URL(request.url);
-  const slug = url.searchParams.get("slug");
+  const id = url.searchParams.get("id");
 
   let book: Pick<Book, "title" | "author" | "dateStart" | "dateEnd"> | null =
     null;
 
-  if (slug) {
-    const bookRes = await getBookBySlug(slug);
-    invariant(bookRes, "No book for this slug");
+  if (id) {
+    const bookRes = await getBookById(id);
+    invariant(bookRes, "No book for this id");
     const { title, author, dateStart, dateEnd } = bookRes;
     book = {
       title,
@@ -46,7 +46,7 @@ export async function action({ request, params }: ActionArgs) {
   const dateStart = formData.get("dateStart");
   const dateEnd = formData.get("dateEnd");
   const intent = formData.get("intent");
-  invariant(params.categorySlug, "Category name must be defined.");
+  invariant(params.categoryId, "Category name must be defined.");
 
   if (typeof title !== "string" || title.length === 0) {
     return json(
@@ -70,7 +70,7 @@ export async function action({ request, params }: ActionArgs) {
           author: "Author is required",
           dateStart: null,
           dateEnd: null,
-          slug: null,
+          id: null,
         },
       },
       { status: 400 }
@@ -105,7 +105,7 @@ export async function action({ request, params }: ActionArgs) {
     );
   }
 
-  const slug = title
+  const id = title
     .toLowerCase()
     .replace(/[^\w\s]/gi, "")
     .split(" ")
@@ -116,23 +116,23 @@ export async function action({ request, params }: ActionArgs) {
       title,
       dateEnd: new Date(dateEnd),
       dateStart: new Date(dateStart),
-      slug,
+      id,
       author,
-      categoryId: params.categorySlug,
+      categoryId: params.categoryId,
     });
   } else if (intent === "update") {
     await updateBook({
       title,
       dateEnd: new Date(dateEnd),
       dateStart: new Date(dateStart),
-      slug,
+      id,
       author,
-      categoryId: params.categorySlug,
+      categoryId: params.categoryId,
     });
   }
 
   return redirect(
-    `/book-group/${params.bookGroupSlug}/category/${params.categorySlug}`
+    `/book-group/${params.bookGroupId}/category/${params.categoryId}`
   );
 }
 
@@ -141,7 +141,7 @@ const inputClassName = "";
 export default function BookForm() {
   const actionData = useActionData<typeof action>();
   const { book } = useLoaderData<typeof loader>();
-  const { categorySlug } = useParams();
+  const { categoryId } = useParams();
 
   const isEdit = Boolean(book);
 
@@ -154,7 +154,7 @@ export default function BookForm() {
     <PageContainer className="gap-4">
       <h1>{`${
         isEdit ? "Edytuj książkę" : "Dodaj nową ksiażkę"
-      } dla kategorii ${categorySlug}`}</h1>
+      } dla kategorii ${categoryId}`}</h1>
       <Form method="post" className="flex flex-col items-center gap-4">
         <div className="flex w-full flex-col gap-4 md:grid md:grid-cols-2 md:gap-4">
           <Input

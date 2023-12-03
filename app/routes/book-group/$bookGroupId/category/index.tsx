@@ -9,11 +9,11 @@ import { requireUser } from "~/session.server";
 
 export async function loader({ request, params }: LoaderArgs) {
   await requireUser(request);
-  invariant(params.bookGroupSlug, "Book group id is required");
-  const bookCategories = await getCategories(params.bookGroupSlug);
+  invariant(params.bookGroupId, "Book group id is required");
+  const bookCategories = await getCategories(params.bookGroupId);
 
   return json({
-    bookCategories: bookCategories.map(({ slug, name }) => ({ slug, name })),
+    bookCategories: bookCategories.map(({ id, name }) => ({ id, name })),
   });
 }
 
@@ -23,10 +23,10 @@ export default function Categories() {
     <PageContainer className="gap-4">
       <h1>List of categories</h1>
       <section className="flex flex-col gap-3">
-        {bookCategories.map(({ slug, name }) => (
+        {bookCategories.map(({ id, name }) => (
           <Link
-            key={slug}
-            to={slug}
+            key={id}
+            to={id}
             prefetch="intent"
             className="cursor-pointer rounded bg-primary-400 p-3"
           >

@@ -46,7 +46,7 @@ describe("smoke tests", () => {
     it("should create book group", () => {
       const testBookGroup = {
         name: faker.lorem.words(1),
-        slug: faker.lorem.words(1),
+        id: faker.lorem.words(1),
       };
 
       cy.then(() => ({ ...testBookGroup })).as("bookGroupData");
@@ -57,11 +57,11 @@ describe("smoke tests", () => {
       // cy.findByRole("link", { name: /Add new group/i }).click();
 
       cy.get("#name").type(testBookGroup.name);
-      cy.get("#slug").type(testBookGroup.slug);
+      cy.get("#id").type(testBookGroup.id);
       cy.findByText("Create").click();
 
       cy.get("h1").should("have.text", testBookGroup.name);
-      cy.url().should("include", `book-group/${testBookGroup.slug}`);
+      cy.url().should("include", `book-group/${testBookGroup.id}`);
     });
 
     it("should remove book group", () => {
@@ -107,7 +107,7 @@ describe("smoke tests", () => {
       cy.get("@bookGroupData").then((bookGroup) =>
         cy.createUserAndAddToGroup({
           key: userNotAdminKey,
-          bookGroupId: (bookGroup as unknown as { slug: string }).slug,
+          bookGroupId: (bookGroup as unknown as { id: string }).id,
         })
       );
 
@@ -162,7 +162,7 @@ describe("smoke tests", () => {
             .should(
               "eq",
               `${Cypress.config().baseUrl}/book-group/${
-                (bookGroup as unknown as { slug?: string }).slug
+                (bookGroup as unknown as { id?: string }).id
               }/user-list`
             )
         );
@@ -179,7 +179,7 @@ describe("smoke tests", () => {
       cy.get("@bookGroupData").then((bookGroup) =>
         cy.createUserAndAddToGroup({
           key: userNotAdminKey,
-          bookGroupId: (bookGroup as unknown as { slug: string }).slug,
+          bookGroupId: (bookGroup as unknown as { id: string }).id,
         })
       );
 
@@ -203,7 +203,7 @@ describe("smoke tests", () => {
     it("should edit book group", () => {
       const testEditBookGroup = {
         name: faker.lorem.words(1),
-        slug: faker.lorem.words(1),
+        id: faker.lorem.words(1),
       };
       cy.createRandomBookGroup();
 
@@ -220,7 +220,7 @@ describe("smoke tests", () => {
       cy.findByText("Edit", { exact: false });
 
       cy.get("#name").clear().type(testEditBookGroup.name);
-      cy.get("#slug").clear().type(testEditBookGroup.slug);
+      cy.get("#id").clear().type(testEditBookGroup.id);
 
       cy.get('[data-test="button:submitBookForm"]').click();
 
@@ -228,7 +228,7 @@ describe("smoke tests", () => {
 
       cy.url().should(
         "eq",
-        `${Cypress.config().baseUrl}/book-group/${testEditBookGroup.slug}`
+        `${Cypress.config().baseUrl}/book-group/${testEditBookGroup.id}`
       );
     });
   });
@@ -246,20 +246,20 @@ describe("smoke tests", () => {
       cy.get("@bookGroupData").then((bookGroup) =>
         cy.visitAndCheck(
           `/book-group/${
-            (bookGroup as unknown as { slug: string }).slug
+            (bookGroup as unknown as { id: string }).id
           }/category-form`
         )
       );
 
       const testBookCategory = {
         name: faker.lorem.words(1),
-        slug: faker.lorem.words(1),
+        id: faker.lorem.words(1),
       };
 
       cy.then(() => ({ ...testBookCategory })).as("bookCategoryData");
 
       cy.get("#name").type(testBookCategory.name);
-      cy.get("#slug").type(testBookCategory.slug);
+      cy.get("#id").type(testBookCategory.id);
       cy.get('[data-test="image0"]').click();
       cy.findByText("Create").click();
 
@@ -269,8 +269,8 @@ describe("smoke tests", () => {
           .should(
             "include",
             `/book-group/${
-              (bookGroup as unknown as { slug: string }).slug
-            }/category/${testBookCategory.slug}`
+              (bookGroup as unknown as { id: string }).id
+            }/category/${testBookCategory.id}`
           )
       );
       cy.get("h1").should("have.text", testBookCategory.name);

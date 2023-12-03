@@ -24,7 +24,7 @@ async function createUserAndAddToGroup(email: string, bookGroupId: string) {
     name: "Random name",
   });
 
-  await addUserToBookGroup({ email, slug: bookGroupId });
+  await addUserToBookGroup({ email, id: bookGroupId });
 
   console.log(
     `

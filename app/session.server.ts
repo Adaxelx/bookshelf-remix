@@ -68,22 +68,22 @@ export async function requireUser(request: Request) {
 export async function requireAdminUser(
   request: Request,
   params: Params,
-  bookGroupSlug?: string
+  bookGroupId?: string
 ) {
   const user = await requireUser(request);
-  const slug = params.bookGroupSlug ?? bookGroupSlug;
-  invariant(slug, "Book group slug is missing.");
+  const id = params.bookGroupId ?? bookGroupId;
+  invariant(id, "Book group id is missing.");
 
   const bookGroup = await getBookByCategoryIdGroup({
     userId: user.id,
-    bookGroupId: slug,
+    bookGroupId: id,
   });
 
   if (bookGroup?.creatorId === user.id) {
     return user;
   }
 
-  throw redirect(`/book-group/${slug}`);
+  throw redirect(`/book-group/${id}`);
 }
 
 export async function createUserSession({

@@ -38,20 +38,20 @@ export async function createBookGroup(
 }
 
 export async function editBookGroup({
-  prevSlug,
+  previd,
   ...bookGroupData
 }: Omit<BookGroup, "updatedAt" | "createdAt" | "creatorId"> & {
-  prevSlug: BookGroup["slug"];
+  previd: BookGroup["id"];
 }) {
   return prisma.bookGroup.update({
-    where: { slug: prevSlug },
+    where: { id: previd },
     data: bookGroupData,
   });
 }
 
-export async function deleteBookGroup(slug: BookGroup["slug"]) {
+export async function deleteBookGroup(id: BookGroup["id"]) {
   return prisma.bookGroup.delete({
-    where: { slug },
+    where: { id },
   });
 }
 
@@ -59,7 +59,7 @@ export async function getBookGroupsForAdminUser(userId: User["id"]) {
   return prisma.bookGroup.findMany({
     where: { creatorId: userId },
     select: {
-      slug: true,
+      id: true,
     },
   });
 }

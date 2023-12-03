@@ -32,7 +32,7 @@ export async function loader({ request }: LoaderArgs) {
   let adminUserGroups: string[] = [];
   if (user) {
     const resGroups = await getBookGroupsForAdminUser(user?.id);
-    adminUserGroups = resGroups.map(({ slug }) => slug);
+    adminUserGroups = resGroups.map(({ id }) => id);
   }
 
   return json({

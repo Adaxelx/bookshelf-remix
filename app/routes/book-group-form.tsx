@@ -21,29 +21,29 @@ import { requireAdminUser, requireUser, requireUserId } from "~/session.server";
 export async function loader({ request }: LoaderArgs) {
   const userId = await requireUserId(request);
   const url = new URL(request.url);
-  const slug = url.searchParams.get("slug");
+  const id = url.searchParams.get("id");
 
-  if (!slug) return json({ bookGroup: null, prevSlug: "" });
+  if (!id) return json({ bookGroup: null, previd: "" });
 
   const bookGroup = await getBookByCategoryIdGroup({
     userId,
-    bookGroupId: slug,
+    bookGroupId: id,
   });
 
-  invariant(bookGroup, `Can not find book group with slug ${slug}`);
+  invariant(bookGroup, `Can not find book group with id ${id}`);
 
   return json({
-    bookGroup: { name: bookGroup.name, slug: bookGroup.slug },
-    prevSlug: slug,
+    bookGroup: { name: bookGroup.name, id: bookGroup.id },
+    previd: id,
   });
 }
 
-const isPrevSlugDefined = (
-  prevSlug: FormDataEntryValue | null,
+const isPrevidDefined = (
+  previd: FormDataEntryValue | null,
   intent: FormDataEntryValue | null
-): prevSlug is string => {
+): previd is string => {
   return (
-    (typeof prevSlug === "string" && prevSlug.length !== 0) || intent === "add"
+    (typeof previd === "string" && previd.length !== 0) || intent === "add"
   );
 };
 
@@ -52,38 +52,38 @@ export async function action({ request, params }: ActionArgs) {
   const intent = formData.get("intent");
   const isAddForm = intent === "add";
 
-  const prevSlug = formData.get("prevSlug");
-  if (!isPrevSlugDefined(prevSlug, intent)) {
-    throw new Response(`Previous slug is missing!`, {
+  const previd = formData.get("previd");
+  if (!isPrevidDefined(previd, intent)) {
+    throw new Response(`Previous id is missing!`, {
       status: 404,
     });
   }
 
   const user = isAddForm
     ? await requireUser(request)
-    : await requireAdminUser(request, params, prevSlug);
+    : await requireAdminUser(request, params, previd);
 
   const name = formData.get("name");
-  const slug = formData.get("slug");
+  const id = formData.get("id");
 
   if (typeof name !== "string" || name.length === 0) {
     return json(
       {
         errors: {
           name: "Name is required",
-          slug: null,
+          id: null,
         },
       },
       { status: 400 }
     );
   }
 
-  if (typeof slug !== "string" || slug.length === 0) {
+  if (typeof id !== "string" || id.length === 0) {
     return json(
       {
         errors: {
           name: null,
-          slug: "Slug is required",
+          id: "id is required",
         },
       },
       { status: 400 }
@@ -92,10 +92,10 @@ export async function action({ request, params }: ActionArgs) {
 
   const bookGroup =
     intent === "update"
-      ? await editBookGroup({ name, slug, prevSlug })
-      : await createBookGroup({ name, slug, creatorId: user.id });
+      ? await editBookGroup({ name, id, previd })
+      : await createBookGroup({ name, id, creatorId: user.id });
 
-  return redirect(`/book-group/${bookGroup.slug}`);
+  return redirect(`/book-group/${bookGroup.id}`);
 }
 
 const inputClassName = "";
@@ -114,7 +114,7 @@ export default function BookGroupForm() {
       <h1>{`${isEditForm ? "Edit" : "Add new"} book group`}</h1>
       <Form method="post" className="flex flex-col items-center gap-4">
         <div className="flex w-full flex-col gap-4 md:grid md:grid-cols-2 md:gap-4">
-          <input hidden={true} name="prevSlug" value={loaderData.prevSlug} />
+          <input hidden={true} name="previd" value={loaderData.previd} />
           <Input
             className={inputClassName}
             label={<label htmlFor="name">Group name</label>}
@@ -134,20 +134,20 @@ export default function BookGroupForm() {
           />
           <Input
             className={inputClassName}
-            label={<label htmlFor="slug">Slug</label>}
+            label={<label htmlFor="id">id</label>}
             input={
               <input
                 // ref={emailRef}
-                defaultValue={loaderData?.bookGroup?.slug}
-                id="slug"
+                defaultValue={loaderData?.bookGroup?.id}
+                id="id"
                 autoFocus={true}
-                name="slug"
+                name="id"
                 type="text"
-                autoComplete="slug"
-                aria-describedby="slug-error"
+                autoComplete="id"
+                aria-describedby="id-error"
               />
             }
-            error={actionData?.errors?.slug}
+            error={actionData?.errors?.id}
           />
         </div>
         <Button

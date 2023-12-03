@@ -2,7 +2,7 @@ import type { Book, BookCategory } from "@prisma/client";
 
 import { prisma } from "~/db.server";
 
-export async function getBookByCategoryId(categoryId: BookCategory["slug"]) {
+export async function getBookByCategoryId(categoryId: BookCategory["id"]) {
   return prisma.book.findFirst({
     where: {
       categoryId,
@@ -10,7 +10,7 @@ export async function getBookByCategoryId(categoryId: BookCategory["slug"]) {
   });
 }
 
-export async function deleteBook(categoryId: BookCategory["slug"]) {
+export async function deleteBook(categoryId: BookCategory["id"]) {
   return prisma.book.delete({
     where: {
       categoryId,
@@ -18,10 +18,10 @@ export async function deleteBook(categoryId: BookCategory["slug"]) {
   });
 }
 
-export async function getBookBySlug(slug: Book["slug"]) {
+export async function getBookById(id: Book["id"]) {
   return prisma.book.findFirst({
     where: {
-      slug,
+      id,
     },
   });
 }

@@ -7,9 +7,9 @@ import { prisma } from "~/db.server";
 
 installGlobals();
 
-async function deleteBookCategory(slug: string) {
+async function deleteBookCategory(id: string) {
   try {
-    await prisma.bookCategory.delete({ where: { slug } });
+    await prisma.bookCategory.delete({ where: { id } });
   } catch (err) {
     console.log(err);
   }

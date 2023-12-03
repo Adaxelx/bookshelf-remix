@@ -5,10 +5,10 @@ import { prisma } from "~/db.server";
 
 export async function addUserToBookGroup({
   email,
-  slug,
+  id,
 }: {
   email: User["email"];
-  slug: BookGroup["slug"];
+  id: BookGroup["id"];
 }) {
   const user = await getUserByEmail(email);
 
@@ -17,24 +17,23 @@ export async function addUserToBookGroup({
   const connection = await prisma.bookGroupsToUsers.findFirst({
     where: {
       userId: user.id,
-      bookGroupId: slug,
+      bookGroupId: id,
     },
   });
 
-  if (connection)
-    return `User with email ${email} is already in group ${slug}.`;
+  if (connection) return `User with email ${email} is already in group ${id}.`;
 
   return prisma.bookGroupsToUsers.create({
     data: {
       userId: user.id,
-      bookGroupId: slug,
+      bookGroupId: id,
     },
   });
 }
 
-export async function getUsersForBookGroup(slug: BookGroup["slug"]) {
+export async function getUsersForBookGroup(id: BookGroup["id"]) {
   return prisma.bookGroupsToUsers.findMany({
-    where: { bookGroupId: slug },
+    where: { bookGroupId: id },
     include: {
       user: { select: { email: true } },
       bookGroup: { select: { creatorId: true } },
@@ -43,16 +42,16 @@ export async function getUsersForBookGroup(slug: BookGroup["slug"]) {
 }
 
 export async function removeUserFromGroup({
-  slug,
+  id,
   userId,
 }: {
-  slug: BookGroup["slug"];
+  id: BookGroup["id"];
   userId: User["id"];
 }) {
   return prisma.bookGroupsToUsers.deleteMany({
     where: {
       userId: userId,
-      bookGroupId: slug,
+      bookGroupId: id,
     },
   });
 }

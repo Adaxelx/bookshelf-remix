@@ -4,7 +4,7 @@ import { prisma } from "~/db.server";
 
 export type { User } from "@prisma/client";
 
-export async function getCategories(bookGroupId: BookGroup["slug"]) {
+export async function getCategories(bookGroupId: BookGroup["id"]) {
   return prisma.bookCategory.findMany({
     where: {
       bookGroupId,
@@ -12,18 +12,21 @@ export async function getCategories(bookGroupId: BookGroup["slug"]) {
   });
 }
 
-export async function getCategory(categorySlug: BookCategory["slug"]) {
+export async function getCategory(categoryid: BookCategory["id"]) {
   return prisma.bookCategory.findFirst({
     where: {
-      slug: categorySlug,
+      id: categoryid,
+    },
+    select: {
+      imageId: true,
     },
   });
 }
 
-export async function setActiveCategory(categorySlug: BookCategory["slug"]) {
+export async function setActiveCategory(categoryid: BookCategory["id"]) {
   return prisma.bookCategory.update({
     where: {
-      slug: categorySlug,
+      id: categoryid,
     },
     data: {
       isActive: true,
@@ -32,7 +35,7 @@ export async function setActiveCategory(categorySlug: BookCategory["slug"]) {
   });
 }
 
-export async function getActiveCategory(bookGroupId: BookGroup["slug"]) {
+export async function getActiveCategory(bookGroupId: BookGroup["id"]) {
   return prisma.bookCategory.findMany({
     where: {
       bookGroupId,
@@ -48,7 +51,7 @@ export async function createCategory({
 }: Omit<BookCategory, "wasPicked" | "isActive" | "updatedAt" | "createdAt">) {
   return prisma.bookCategory.create({
     data: {
-      bookGroup: { connect: { slug: bookGroupId } },
+      bookGroup: { connect: { id: bookGroupId } },
       image: { connect: { id: imageId } },
       ...category,
       wasPicked: false,
@@ -59,15 +62,15 @@ export async function createCategory({
 
 export async function updateCategory({
   imageId,
-  prevSlug,
+  id,
   ...category
 }: Omit<
   BookCategory,
   "wasPicked" | "isActive" | "updatedAt" | "createdAt" | "bookGroupId"
-> & { prevSlug: BookCategory["slug"] }) {
+>) {
   return prisma.bookCategory.update({
     where: {
-      slug: prevSlug,
+      id,
     },
     data: {
       image: { connect: { id: imageId } },
@@ -76,6 +79,13 @@ export async function updateCategory({
   });
 }
 
-export async function deleteCategory(slug: BookCategory["slug"]) {
-  return prisma.bookCategory.delete({ where: { slug } });
+export async function deleteCategory(id: BookCategory["id"]) {
+  return prisma.bookCategory.delete({ where: { id } });
+}
+
+export async function unactivateCategory(id: BookCategory["id"]) {
+  return prisma.bookCategory.update({
+    where: { id },
+    data: { isActive: false },
+  });
 }

@@ -15,14 +15,16 @@ import { getCategories } from "~/models/bookCategory.server";
 
 import { deleteImage, getImages } from "~/models/image.server";
 import { requireAdminUser } from "~/session.server";
+import { getCategoryImgSrc } from "~/utils/image";
 
 export const links = () => [...deleteModalLinks()];
 
 export async function loader({ request, params }: LoaderArgs) {
   await requireAdminUser(request, params);
-  invariant(params.bookGroupSlug, "Book group id is required");
-  const images = await getImages(params.bookGroupSlug);
-  const categories = await getCategories(params.bookGroupSlug);
+  invariant(params.bookGroupId, "Book group id is required");
+  const images = await getImages(params.bookGroupId);
+
+  const categories = await getCategories(params.bookGroupId);
   return json({
     images,
     categories: categories.map(({ name, imageId }) => ({ name, imageId })),
@@ -34,7 +36,7 @@ export async function action({ request, params }: ActionArgs) {
   const formData = await request.formData();
   const imageId = formData.get("imageId");
 
-  invariant(params.bookGroupSlug, "Book group name must be defined.");
+  invariant(params.bookGroupId, "Book group name must be defined.");
 
   if (typeof imageId !== "string") {
     throw new Response(`Failed to find imageId.`, {
@@ -70,7 +72,7 @@ export default function Images() {
     <PageContainer className="gap-4">
       <h1>List of images</h1>
       <section className="grid grid-cols-3 gap-3">
-        {images.map(({ encoded, id }) => (
+        {images.map(({ id, altText }) => (
           <div key={id} className="relative">
             <Button
               disabled={isDeleting}
@@ -80,7 +82,7 @@ export default function Images() {
             >
               Delete
             </Button>
-            <Card src={encoded} alt="image" />
+            <Card src={getCategoryImgSrc(id)} alt={altText} />
           </div>
         ))}
       </section>

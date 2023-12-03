@@ -16,7 +16,7 @@ export async function action({ request, params }: ActionArgs) {
   const formData = await request.formData();
   const email = formData.get("email");
 
-  invariant(params.bookGroupSlug, "Book group name must be defined.");
+  invariant(params.bookGroupId, "Book group name must be defined.");
 
   if (!validateEmail(email)) {
     return json({ errors: { email: "Email is invalid" } }, { status: 400 });
@@ -24,7 +24,7 @@ export async function action({ request, params }: ActionArgs) {
 
   const connection = await addUserToBookGroup({
     email,
-    slug: params.bookGroupSlug,
+    id: params.bookGroupId,
   });
 
   if (typeof connection === "string") {
@@ -37,7 +37,7 @@ export async function action({ request, params }: ActionArgs) {
       { status: 400 }
     );
   }
-  return redirect(`/book-group/${params.bookGroupSlug}/user-list`);
+  return redirect(`/book-group/${params.bookGroupId}/user-list`);
 }
 
 const inputClassName = "";

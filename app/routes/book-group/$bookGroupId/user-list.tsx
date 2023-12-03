@@ -22,8 +22,8 @@ export const links = () => [...deleteModalLinks()];
 
 export async function loader({ request, params }: LoaderArgs) {
   await requireUser(request);
-  invariant(params.bookGroupSlug, "Book group id is required");
-  const connections = await getUsersForBookGroup(params.bookGroupSlug);
+  invariant(params.bookGroupId, "Book group id is required");
+  const connections = await getUsersForBookGroup(params.bookGroupId);
 
   return json({
     connections,
@@ -36,7 +36,7 @@ export async function action({ request, params }: ActionArgs) {
   const userId = formData.get("userId");
   const bookGroupId = formData.get("bookGroupId");
 
-  invariant(params.bookGroupSlug, "Book group name must be defined.");
+  invariant(params.bookGroupId, "Book group name must be defined.");
 
   if (typeof userId !== "string") {
     throw new Response(`Failed to find userId.`, {
@@ -51,7 +51,7 @@ export async function action({ request, params }: ActionArgs) {
 
   await removeUserFromGroup({
     userId,
-    slug: bookGroupId,
+    id: bookGroupId,
   });
 
   return json({ userId });
@@ -59,8 +59,8 @@ export async function action({ request, params }: ActionArgs) {
 
 export default function UserList() {
   const { connections } = useLoaderData<typeof loader>();
-  const { bookGroupSlug } = useParams();
-  const isUserAdmin = useIsAdminUser(bookGroupSlug);
+  const { bookGroupId } = useParams();
+  const isUserAdmin = useIsAdminUser(bookGroupId);
   const actionData = useActionData<typeof action>();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<{
     userId: string;

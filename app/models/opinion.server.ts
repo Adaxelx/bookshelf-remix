@@ -2,7 +2,7 @@ import type { Book, Opinion } from "@prisma/client";
 
 import { prisma } from "~/db.server";
 
-export async function getOpinions(bookId: Book["slug"]) {
+export async function getOpinions(bookId: Book["id"]) {
   return prisma.opinion.findMany({
     where: {
       bookId: bookId,

@@ -4,99 +4,99 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native"]
 }
 
-
-model Opinion{
-  id    String @id @default(cuid())
-  book  Book  @relation(fields: [bookId], references: [slug], onDelete: Cascade)
-  bookId String
+model Opinion {
+  id          String @id @default(cuid())
+  book        Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  bookId      String
   description String
-  user  User @relation(fields: [userId], references: [id])
-  userId String
-  rate  Int
-
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Book{
-  slug    String @id @default(cuid())
-  category    BookCategory @relation(fields: [categoryId], references: [slug], onDelete: Cascade)
-  categoryId    String @unique
-  title   String
-  author    String
-  dateStart   DateTime @default(now())
-  dateEnd     DateTime  @default(now())
-  opinions    Opinion[]
-
+  user        User   @relation(fields: [userId], references: [id])
+  userId      String
+  rate        Int
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model BookCategory{
-  slug    String @id @default(cuid())
-  bookGroup   BookGroup   @relation(fields: [bookGroupId], references: [slug], onDelete: Cascade)
-  bookGroupId     String
-  name      String
-  isActive  Boolean @default(false)
-  wasPicked Boolean @default(false)
-  book      Book?
-  image     Image  @relation(fields: [imageId], references: [id], onDelete: Cascade)
-  imageId   String
+model Book {
+  id         String       @id @default(cuid())
+  category   BookCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId String       @unique
+  title      String
+  author     String
+  dateStart  DateTime     @default(now())
+  dateEnd    DateTime     @default(now())
+  opinions   Opinion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BookCategory {
+  id          String    @id @default(cuid())
+  bookGroup   BookGroup @relation(fields: [bookGroupId], references: [id], onDelete: Cascade)
+  bookGroupId String
+  name        String
+  isActive    Boolean   @default(false)
+  wasPicked   Boolean   @default(false)
+  book        Book?
+  image       Image     @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  imageId     String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Image {
-  id String @id @default(cuid())
-  encoded   String
-  bookGroup   BookGroup?   @relation(fields: [bookGroupId], references: [slug], onDelete: Cascade) 
-  bookGroupId     String?
+  id             String         @id @default(cuid())
+  bookGroup      BookGroup?     @relation(fields: [bookGroupId], references: [id], onDelete: Cascade)
+  bookGroupId    String?
   bookCategories BookCategory[]
+  blob           Bytes
+  altText        String
+  contentType    String
+
+  @@index([bookGroupId])
 }
 
-model BookGroup{
-  slug    String @id @default(cuid())
-  users   BookGroupsToUsers[]
-  categories  BookCategory[]
-  creatorId String
-  name    String 
-  images Image[]
+model BookGroup {
+  id         String              @id @default(cuid())
+  users      BookGroupsToUsers[]
+  categories BookCategory[]
+  creatorId  String
+  name       String
+  images     Image[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model User {
-  id    String @id @default(cuid())
-  email   String   @unique
-  name    String   @default("example user")
-  password  Password?
-  bookGroups     BookGroupsToUsers[] 
-  opinions Opinion[]
-  
+  id         String              @id @default(cuid())
+  email      String              @unique
+  name       String              @default("example user")
+  password   Password?
+  bookGroups BookGroupsToUsers[]
+  opinions   Opinion[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model BookGroupsToUsers {
-  bookGroup       BookGroup     @relation(fields: [bookGroupId], references: [slug], onDelete: Cascade)
-  bookGroupId    String // relation scalar field (used in the `@relation` attribute above)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String // relation scalar field (used in the `@relation` attribute above)
-  @@id([userId,bookGroupId])
+  bookGroup   BookGroup @relation(fields: [bookGroupId], references: [id], onDelete: Cascade)
+  bookGroupId String // relation scalar field (used in the `@relation` attribute above)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String // relation scalar field (used in the `@relation` attribute above)
+
+  @@id([userId, bookGroupId])
 }
 
-
-
 model Password {
-  hash String
+  hash   String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId String @unique
 }

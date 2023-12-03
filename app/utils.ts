@@ -80,9 +80,7 @@ export function useUser(): User {
   return maybeUser;
 }
 
-export function useIsAdminUser(
-  groupId: BookGroup["slug"] | undefined
-): Boolean {
+export function useIsAdminUser(groupId: BookGroup["id"] | undefined): Boolean {
   const adminGroupsForUser = useAdminGroupsOfUser();
   if (!adminGroupsForUser) {
     throw new Error(
@@ -90,7 +88,7 @@ export function useIsAdminUser(
     );
   }
 
-  return adminGroupsForUser.some((slug) => slug === groupId);
+  return adminGroupsForUser.some((id) => id === groupId);
 }
 
 export function validateEmail(email: unknown): email is string {

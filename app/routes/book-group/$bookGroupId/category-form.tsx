@@ -11,56 +11,57 @@ import {
 import { useState } from "react";
 import invariant from "tiny-invariant";
 import { Button, Card, Input, PageContainer } from "~/components";
-import {
-  createCategory,
-  getCategory,
-  updateCategory,
-} from "~/models/bookCategory.server";
+import { createCategory, updateCategory } from "~/models/bookCategory.server";
 import { getImages } from "~/models/image.server";
 import { requireAdminUser } from "~/session.server";
 
 import { BsCheckLg } from "react-icons/bs";
 import type { BookCategory } from "@prisma/client";
+import { prisma } from "~/db.server";
+import { getCategoryImgSrc } from "~/utils/image";
 
 export async function loader({ request, params }: LoaderArgs) {
   await requireAdminUser(request, params);
-  invariant(params.bookGroupSlug, "Slug is required");
+  invariant(params.bookGroupId, "id is required");
   const url = new URL(request.url);
-  const slug = url.searchParams.get("slug");
+  const id = url.searchParams.get("id");
+  const images = await getImages(params.bookGroupId);
 
-  let category: Pick<BookCategory, "name" | "slug" | "imageId"> | null = null;
+  if (id) {
+    const categoryData = await prisma.bookCategory.findUnique({
+      where: {
+        id,
+      },
+      select: {
+        imageId: true,
+        name: true,
+        id: true,
+      },
+    });
 
-  if (slug) {
-    const categoryData = await getCategory(slug);
-    invariant(categoryData, "No category for this slug");
-    category = {
-      name: categoryData.name,
-      slug: categoryData.slug,
-      imageId: categoryData.imageId,
-    };
+    invariant(categoryData, "No category for this id");
+    return json({ images, category: categoryData });
   }
 
-  const images = await getImages(params.bookGroupSlug);
-  return json({ images, category });
+  return json({ images, category: null });
 }
 
 export async function action({ request, params }: ActionArgs) {
   await requireAdminUser(request, params);
   const formData = await request.formData();
   const name = formData.get("name");
-  const slug = formData.get("slug");
   const imageId = formData.get("imageId");
   const intent = formData.get("intent");
-  const prevSlug = formData.get("prevSlug");
+  const id = formData.get("categoryId");
 
-  invariant(params.bookGroupSlug, "Book group name must be defined.");
+  invariant(params.bookGroupId, "Book group name must be defined.");
 
   if (typeof name !== "string" || name.length === 0) {
     return json(
       {
         errors: {
           name: "Name is required",
-          slug: null,
+          id: null,
           imageId: null,
         },
       },
@@ -68,12 +69,12 @@ export async function action({ request, params }: ActionArgs) {
     );
   }
 
-  if (typeof slug !== "string" || slug.length === 0) {
+  if (typeof id !== "string" || id.length === 0) {
     return json(
       {
         errors: {
           name: null,
-          slug: "Slug is required",
+          id: "Id is required",
           imageId: null,
         },
       },
@@ -86,7 +87,7 @@ export async function action({ request, params }: ActionArgs) {
       {
         errors: {
           name: null,
-          slug: null,
+          id: null,
           imageId: "Image is required",
         },
       },
@@ -96,7 +97,7 @@ export async function action({ request, params }: ActionArgs) {
 
   const data = {
     name,
-    slug,
+    id,
     imageId,
   };
 
@@ -105,20 +106,15 @@ export async function action({ request, params }: ActionArgs) {
   if (intent === "add") {
     category = await createCategory({
       ...data,
-      bookGroupId: params.bookGroupSlug,
+      bookGroupId: params.bookGroupId,
     });
   } else if (intent === "update") {
-    if (typeof prevSlug !== "string" || prevSlug.length === 0) {
-      throw new Error("Missing prevSlug");
-    }
-    category = await updateCategory({ ...data, prevSlug });
+    category = await updateCategory({ ...data });
   }
 
   invariant(category, "Unknown intent ");
 
-  return redirect(
-    `/book-group/${params.bookGroupSlug}/category/${category.slug}`
-  );
+  return redirect(`/book-group/${params.bookGroupId}/category/${category.id}`);
 }
 
 const inputClassName = "";
@@ -126,7 +122,8 @@ const inputClassName = "";
 export default function CategoryForm() {
   const { images, category } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
-  const { bookGroupSlug } = useParams();
+  const { bookGroupId } = useParams();
+
   const [pickedImageId, setPickedImageId] = useState(category?.imageId);
 
   const isEdit = Boolean(category);
@@ -141,11 +138,10 @@ export default function CategoryForm() {
       <h1>
         {isEdit
           ? `Editting category ${category?.name}`
-          : `New category for book group ${bookGroupSlug}`}
+          : `New category for book group ${bookGroupId}`}
       </h1>
       <Form method="post" className="flex flex-col items-center gap-4">
         <div className="flex w-full flex-col gap-4 md:grid md:grid-cols-2 md:gap-4">
-          <input hidden name="prevSlug" value={category?.slug} />
           <Input
             className={inputClassName}
             label={<label htmlFor="name">Name of category</label>}
@@ -163,23 +159,6 @@ export default function CategoryForm() {
             }
             error={actionData?.errors?.name}
           />
-          <Input
-            className={inputClassName}
-            label={<label htmlFor="slug">Slug</label>}
-            input={
-              <input
-                // ref={emailRef}
-                defaultValue={category?.slug}
-                id="slug"
-                autoFocus={true}
-                name="slug"
-                type="text"
-                autoComplete="slug"
-                aria-describedby="slug-error"
-              />
-            }
-            error={actionData?.errors?.slug}
-          />
         </div>
         <div className="w-full">
           <label
@@ -196,7 +175,7 @@ export default function CategoryForm() {
             autoComplete="imageId"
           />
           <div className="flex max-w-full snap-x snap-mandatory snap-center gap-2 overflow-x-scroll">
-            {images.map(({ id, encoded }, index) => {
+            {images.map(({ id, altText }, index) => {
               const isActive = id === pickedImageId;
               return (
                 <div
@@ -209,8 +188,8 @@ export default function CategoryForm() {
                     className={`h-96 w-64 flex-shrink-0 border-4 transition-colors ${
                       isActive ? "border-green-700" : "border-black"
                     }`}
-                    src={encoded}
-                    alt="Card"
+                    src={getCategoryImgSrc(id)}
+                    alt={altText}
                   />
                   <div
                     aria-label="selected"

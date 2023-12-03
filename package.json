@@ -29,6 +29,8 @@
     "/public/build"
   ],
   "dependencies": {
+    "@conform-to/react": "^0.9.1",
+    "@conform-to/zod": "^0.9.1",
     "@prisma/client": "^4.1.1",
     "@reach/dialog": "^0.17.0",
     "@reach/portal": "^0.17.0",
@@ -42,7 +44,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^4.4.0",
-    "tiny-invariant": "^1.2.0"
+    "tiny-invariant": "^1.2.0",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@faker-js/faker": "^7.3.0",
@@ -73,7 +76,7 @@
     "postcss": "^8.4.14",
     "prettier": "2.7.1",
     "prettier-plugin-tailwindcss": "^0.1.13",
-    "prisma": "^4.1.1",
+    "prisma": "^5.6.0",
     "start-server-and-test": "^1.14.0",
     "tailwindcss": "^3.1.8",
     "ts-node": "^10.9.1",
@@ -83,10 +86,10 @@
     "vite-tsconfig-paths": "^3.5.0",
     "vitest": "^0.21.0"
   },
-  "engines": {
-    "node": ">=14"
-  },
   "prisma": {
-    "seed": "node --require tsconfig-paths/register prisma/seed.js --reset"
+    "seed": "npx tsx prisma/seed.ts"
+  },
+  "engines": {
+    "node": "18"
   }
 }

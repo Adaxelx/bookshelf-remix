@@ -1,14 +1,23 @@
-const fs = require("fs");
-const { PrismaClient } = require("@prisma/client");
-const bcrypt = require("bcryptjs");
-const path = require("node:path");
+import fs from "node:fs";
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
+
+import dayjs from "dayjs";
+
 const prisma = new PrismaClient();
 
-function base64_encode(file) {
-  // read binary data
-  var bitmap = fs.readFileSync(path.resolve(__dirname, file));
-  // convert binary data to base64 encoded string
-  return new Buffer(bitmap).toString("base64");
+async function img({
+  altText,
+  filepath,
+}: {
+  altText: string;
+  filepath: string;
+}) {
+  return {
+    altText,
+    contentType: filepath.endsWith(".png") ? "image/png" : "image/jpeg",
+    blob: await fs.promises.readFile(filepath),
+  };
 }
 
 const bookCategoriesNames = [
@@ -125,7 +134,7 @@ async function seed() {
 
   const bookGroup = await prisma.bookGroup.create({
     data: {
-      slug: "dzusio-adkowa-grupa",
+      id: "dzusio-adkowa-grupa",
       creatorId: user.id,
       name: "DżusioAdkowaGrupa",
       users: { create: [{ userId: user.id }, { userId: user2.id }] },
@@ -134,19 +143,23 @@ async function seed() {
 
   await prisma.bookGroup.create({
     data: {
-      slug: "adkowo-dzusiowa-grupa",
+      id: "adkowo-dzusiowa-grupa",
       creatorId: user2.id,
       name: "AdkowoDzusiowaGrupa",
       users: { create: [{ userId: user2.id }, { userId: user.id }] },
     },
   });
 
-  const images = await Promise.all(
+  const imagesData = await Promise.all(
     bookCategoriesNames.map(({ name, image }) =>
+      img({ filepath: `./public/assets/${image}`, altText: name })
+    )
+  );
+
+  const images = await Promise.all(
+    imagesData.map((image) =>
       prisma.image.create({
-        data: {
-          encoded: base64_encode(`../public/assets/${image}`),
-        },
+        data: image,
       })
     )
   );
@@ -158,14 +171,10 @@ async function seed() {
     bookCategoriesNames.map(({ name, image }, index) =>
       prisma.bookCategory.create({
         data: {
-          slug: name
-            .split(" ")
-            .map((word) => word.toLowerCase())
-            .join("-"),
-          bookGroup: { connect: { slug: bookGroup.slug } },
+          bookGroup: { connect: { id: bookGroup.id } },
           name,
-          isActive: activeCategory === name,
-          wasPicked: wasPicked.some((pickedName) => pickedName === name),
+          isActive: activeCategory.name === name,
+          wasPicked: wasPicked.some((pickedName) => pickedName.name === name),
           image: { connect: { id: images[index].id } },
         },
       })
@@ -179,12 +188,12 @@ async function seed() {
       (bookCategory, index) =>
         prisma.book.create({
           data: {
-            slug: `random-book-${index}`,
-            categoryId: bookCategory.slug,
+            id: `random-book-${index}`,
+            categoryId: bookCategory.id,
             title: "RandomBook",
             author: "Random",
             dateStart: new Date(),
-            dateEnd: new Date(new Date() + 14),
+            dateEnd: dayjs().add(14, "day").toDate(),
           },
         })
     )
@@ -199,7 +208,7 @@ async function seed() {
         prisma.opinion.create({
           data: {
             userId: userIt.id,
-            bookId: book.slug,
+            bookId: book.id,
             description: "Random",
             rate: rates[it++],
           },

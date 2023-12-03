@@ -10,9 +10,10 @@ export async function getImage(imageId: Image["id"]) {
   });
 }
 
-export async function getImages(bookGroupId: BookGroup["slug"]) {
+export async function getImages(bookGroupId: BookGroup["id"]) {
   return prisma.image.findMany({
     where: { OR: [{ bookGroupId: null }, { bookGroupId }] },
+    select: { id: true, altText: true },
   });
 }
 

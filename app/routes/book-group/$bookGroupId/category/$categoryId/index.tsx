@@ -19,54 +19,57 @@ import {
   Input,
   PageContainer,
 } from "~/components";
-import { deleteBook, getBookByCategoryId } from "~/models/book.server";
-import { deleteCategory, getCategory } from "~/models/bookCategory.server";
-import { getImage } from "~/models/image.server";
+import { deleteBook } from "~/models/book.server";
+
 import { requireAdminUser, requireUser } from "~/session.server";
 import dayjs from "dayjs";
-import { addOpinion, getOpinions } from "~/models/opinion.server";
+import { addOpinion } from "~/models/opinion.server";
 import { useEffect, useState } from "react";
 import type { Nullable } from "~/utils";
 import { useIsAdminUser } from "~/utils";
+import { prisma } from "~/db.server";
+import {
+  deleteCategory,
+  unactivateCategory,
+} from "~/models/bookCategory.server";
+import { getCategoryImgSrc } from "~/utils/image";
 
 export const links = () => [...deleteModalLinks()];
 
 export async function loader({ request, params }: LoaderArgs) {
   await requireUser(request);
-  invariant(params.categorySlug, "CategoryName is required");
-  const bookCategory = await getCategory(params.categorySlug);
-  if (!bookCategory) {
-    throw new Response(
-      `Category with slug "${params.categorySlug}" doesn't exist!`,
-      {
-        status: 404,
-      }
-    );
-  }
-  const image = await getImage(bookCategory.imageId);
-  invariant(
-    image,
-    `Image not found for category ${bookCategory.name}. Something went wrong.`
-  );
-  const book = await getBookByCategoryId(bookCategory.slug);
-  let opinions: Awaited<ReturnType<typeof getOpinions>> = [];
-  if (book) {
-    opinions = await getOpinions(book.slug);
-  }
+  invariant(params.categoryId, "CategoryName is required");
+  const bookCategory = await prisma.bookCategory.findUnique({
+    where: { id: params.categoryId },
+    select: {
+      imageId: true,
+      name: true,
+      isActive: true,
+      wasPicked: true,
+      book: {
+        select: {
+          title: true,
+          author: true,
+          id: true,
+          dateEnd: true,
+          dateStart: true,
+          opinions: {
+            select: {
+              id: true,
+              rate: true,
+              description: true,
+              user: {
+                select: { name: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
 
   return json({
     bookCategory,
-    image: image.encoded,
-    book: book
-      ? {
-          title: book.title,
-          author: book.author,
-          dateStart: book.dateStart,
-          dateEnd: book.dateEnd,
-          slug: book.slug,
-        }
-      : null,
-    opinions,
   });
 }
 
@@ -78,14 +81,22 @@ export async function action({ request, params }: ActionArgs) {
   const bookId = formData.get("bookId");
   const intent = formData.get("intent");
 
-  invariant(params.bookGroupSlug, "Book group slug must be defined");
-  invariant(params.categorySlug, "Category name must be defined.");
+  invariant(params.bookGroupId, "Book group id must be defined");
+  invariant(params.categoryId, "Category name must be defined.");
+  if (intent === "unactivate") {
+    await unactivateCategory(params.categoryId);
+
+    return json({
+      errors: { rate: null, description: null, bookId: null },
+      shouldCloseModal: false,
+    });
+  }
   if (intent === "delete-category") {
-    await deleteCategory(params.categorySlug);
-    return redirect(`/book-group/${params.bookGroupSlug}/category`);
+    await deleteCategory(params.categoryId);
+    return redirect(`/book-group/${params.bookGroupId}/category`);
   }
   if (intent === "delete-book") {
-    await deleteBook(params.categorySlug);
+    await deleteBook(params.categoryId);
     return json({
       errors: { rate: null, description: null, bookId: null },
       shouldCloseModal: true,
@@ -142,31 +153,23 @@ export async function action({ request, params }: ActionArgs) {
   });
 
   return redirect(
-    `/book-group/${params.bookGroupSlug}/category/${params.categorySlug}`
+    `/book-group/${params.bookGroupId}/category/${params.categoryId}`
   );
 }
 
 type DeleteModalTypes = Nullable<"category" | "opinion" | "book">;
 
 export default function CategoryPage() {
-  const { bookCategory, image, book, opinions } =
-    useLoaderData<typeof loader>();
+  const { bookCategory } = useLoaderData<typeof loader>();
 
-  const { bookGroupSlug, categorySlug } = useParams();
+  const { bookGroupId, categoryId } = useParams();
 
-  const isAdminUser = useIsAdminUser(bookGroupSlug);
+  const isAdminUser = useIsAdminUser(bookGroupId);
 
   const actionData = useActionData<typeof action>();
-  const { name } = bookCategory;
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] =
     useState<DeleteModalTypes>(null);
-
-  const isBookPresent = book;
-  const wasBookActiveOrPicked = bookCategory.isActive || bookCategory.wasPicked;
-  const shouldShowAddBookButton = !isBookPresent && wasBookActiveOrPicked;
-  const shouldShowNoActiveCategoryAlert =
-    !isBookPresent && !wasBookActiveOrPicked;
 
   useEffect(() => {
     if (actionData?.shouldCloseModal) {
@@ -174,16 +177,28 @@ export default function CategoryPage() {
     }
   }, [actionData?.shouldCloseModal]);
 
+  if (!bookCategory) return null;
+
+  const { name, book, isActive, wasPicked, imageId } = bookCategory;
+
+  const isBookPresent = book;
+  const wasBookActiveOrPicked = isActive || wasPicked;
+  const shouldShowAddBookButton = !isBookPresent && wasBookActiveOrPicked;
+  const shouldShowNoActiveCategoryAlert =
+    !isBookPresent && !wasBookActiveOrPicked;
+
+  const opinions = book?.opinions ?? [];
+
   return (
     <PageContainer className="gap-4">
       <header className="flex flex-col gap-2">
         <h1>{name}</h1>
-        {bookCategory.isActive || bookCategory.wasPicked ? (
+        {isActive || wasPicked ? (
           <div className="flex gap-2">
-            {bookCategory.isActive ? (
+            {isActive ? (
               <div className="rounded bg-primary-600 px-3 py-1">Active</div>
             ) : null}
-            {bookCategory.wasPicked ? (
+            {wasPicked ? (
               <div className="rounded bg-primary-600 px-3 py-1">
                 Already picked
               </div>
@@ -196,10 +211,23 @@ export default function CategoryPage() {
           <Button
             variant="secondary"
             prefetch="intent"
-            to={`/book-group/${bookGroupSlug}/category-form?slug=${categorySlug}`}
+            to={`/book-group/${bookGroupId}/category-form?id=${categoryId}`}
           >
             Edit
           </Button>
+          {isActive ? (
+            <Form method="post">
+              <Button
+                type="submit"
+                name="intent"
+                variant="secondary"
+                value={`unactivate`}
+              >
+                Unactivate
+              </Button>
+            </Form>
+          ) : null}
+
           <Button
             colorVariant="error"
             onClick={() => setIsDeleteModalOpen("category")}
@@ -211,7 +239,10 @@ export default function CategoryPage() {
 
       <main className="flex max-h-[40rem] flex-col gap-4 md:flex-row">
         <div className="max-h-[40rem] max-w-sm self-center">
-          <Card src={image} alt={`Card for category ${bookCategory.name}`} />
+          <Card
+            src={getCategoryImgSrc(imageId)}
+            alt={`Card for category ${name}`}
+          />
         </div>
         <section className="flex grow flex-col gap-4 rounded bg-primary-300 p-3">
           <div className="flex flex-col gap-1 md:flex-row md:gap-4">
@@ -220,7 +251,7 @@ export default function CategoryPage() {
               <>
                 <Button
                   variant="secondary"
-                  to={`book-form?slug=${book.slug}`}
+                  to={`book-form?id=${book.id}`}
                   prefetch="intent"
                 >
                   Edit book
@@ -285,7 +316,7 @@ export default function CategoryPage() {
                 <Form method="post" className="flex items-start gap-1">
                   <Input
                     className="w-12"
-                    label={<label htmlFor="dateEnd">Rate:</label>}
+                    label={<label>Rate:</label>}
                     input={
                       <input
                         // ref={emailRef}
@@ -300,7 +331,7 @@ export default function CategoryPage() {
                         aria-describedby="rate-error"
                       />
                     }
-                    error={actionData?.errors?.rate}
+                    errors={[actionData?.errors?.rate]}
                   />
                   <Input
                     className="grow"
@@ -316,14 +347,14 @@ export default function CategoryPage() {
                         aria-describedby="description-error"
                       />
                     }
-                    error={actionData?.errors?.description}
+                    errors={[actionData?.errors?.description]}
                   />
                   <Input
                     className="self-end"
                     input={
-                      <input hidden={true} name="bookId" value={book.slug} />
+                      <input hidden={true} name="bookId" value={book.id} />
                     }
-                    error={actionData?.errors?.bookId}
+                    errors={[actionData?.errors?.bookId]}
                   />
                   <Button className="mt-6" type="submit">
                     Prześlij

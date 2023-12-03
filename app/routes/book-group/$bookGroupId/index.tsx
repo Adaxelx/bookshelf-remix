@@ -14,11 +14,7 @@ import {
   PageContainer,
   deleteModalLinks,
 } from "~/components";
-import {
-  getCategories,
-  getCategory,
-  setActiveCategory,
-} from "~/models/bookCategory.server";
+import { getCategories, setActiveCategory } from "~/models/bookCategory.server";
 import {
   deleteBookGroup,
   getBookByCategoryIdGroup,
@@ -28,6 +24,8 @@ import { requireAdminUser, requireUser } from "~/session.server";
 import backImage from "public/assets/Back.jpg";
 import { useState } from "react";
 import { useIsAdminUser } from "~/utils";
+import { prisma } from "~/db.server";
+import { getCategoryImgSrc } from "~/utils/image";
 
 export const links = () => [
   ...flipCardLinks(),
@@ -37,25 +35,25 @@ export const links = () => [
 
 export async function loader({ request, params }: LoaderArgs) {
   const user = await requireUser(request);
-  invariant(params.bookGroupSlug, "Slug is required");
+  invariant(params.bookGroupId, "Id is required");
   const bookGroup = await getBookByCategoryIdGroup({
     userId: user.id,
-    bookGroupId: params.bookGroupSlug,
+    bookGroupId: params.bookGroupId,
   });
 
   if (!bookGroup) {
     throw new Response(
-      `Book group with slug "${params.bookGroupSlug}" doesn't exist!`,
+      `Book group with id "${params.bookGroupId}" doesn't exist!`,
       {
         status: 404,
       }
     );
   }
 
-  const bookCategories = await getCategories(params.bookGroupSlug);
+  const bookCategories = await getCategories(params.bookGroupId);
   return json({
-    bookGroup: { name: bookGroup.name, slug: bookGroup.slug },
-    bookCategories: bookCategories.map(({ slug }) => slug),
+    bookGroup: { name: bookGroup.name, id: bookGroup.id },
+    bookCategories: bookCategories.map(({ id }) => id),
     activeBookCategory: bookCategories.find(({ isActive }) => isActive),
   });
 }
@@ -63,34 +61,48 @@ export async function loader({ request, params }: LoaderArgs) {
 export async function action({ request, params }: ActionArgs) {
   await requireAdminUser(request, params);
   const formData = await request.formData();
-  const slug = formData.get("randomCategory");
+  const id = formData.get("randomCategory");
   const intent = formData.get("intent");
 
-  invariant(params.bookGroupSlug, "Book group is required");
+  invariant(params.bookGroupId, "Book group is required");
 
   if (intent === "delete") {
-    await deleteBookGroup(params.bookGroupSlug);
+    await deleteBookGroup(params.bookGroupId);
     return redirect(`/book-group`);
   }
 
-  invariant(typeof slug === "string", "Missing random category");
-  const category = await getCategory(slug);
+  invariant(typeof id === "string", "Missing random category");
+  const category = await prisma.bookCategory.findUnique({
+    where: {
+      id,
+    },
+    select: {
+      imageId: true,
+      name: true,
+      id: true,
+    },
+  });
   invariant(category, "Category not found. Something went wrong.");
   const image = await getImage(category.imageId);
   invariant(
     image,
     `Image not found for category ${category.name}. Something went wrong.`
   );
-  await setActiveCategory(category.slug);
-  return json({ name: category.name, imageSrc: image?.encoded });
+  await setActiveCategory(category.id);
+  return json({
+    name: category.name,
+    imageId: category.imageId,
+  });
 }
 
 export default function BookGroup() {
   const { bookGroup, bookCategories, activeBookCategory } =
     useLoaderData<typeof loader>();
   const randomCategory = useActionData<typeof action>();
-  const isAdminUser = useIsAdminUser(bookGroup.slug);
+  const isAdminUser = useIsAdminUser(bookGroup.id);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  console.log(bookGroup.id);
   return (
     <PageContainer>
       <div className="flex shrink grow basis-0 flex-col gap-4">
@@ -126,7 +138,7 @@ export default function BookGroup() {
                 Dodaj użytkownika
               </Button>
               <Button
-                to={`/book-group-form?slug=${bookGroup.slug}`}
+                to={`/book-group-form?id=${bookGroup.id}`}
                 prefetch="intent"
                 variant="secondary"
                 data-test="button:editGroup"
@@ -161,7 +173,7 @@ export default function BookGroup() {
           ) : null}
           {activeBookCategory ? (
             <Button
-              to={`category/${activeBookCategory.slug}`}
+              to={`category/${activeBookCategory.id}`}
               variant="secondary"
               prefetch="intent"
             >
@@ -190,11 +202,11 @@ export default function BookGroup() {
       <div className="shrink grow basis-0" />
       {randomCategory ? (
         <FlipCard
-          key={randomCategory.imageSrc}
+          key={randomCategory.imageId}
           categoryName={randomCategory.name}
           front={
             <Card
-              src={randomCategory?.imageSrc}
+              src={getCategoryImgSrc(randomCategory?.imageId)}
               alt={`Front image for category ${randomCategory?.name}`}
             />
           }
